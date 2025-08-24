@@ -9,8 +9,7 @@
     "visitedDate": "2025-08-18",
     "activities": [
       {"title": "Parc del Laberint d'Horta", "note": "Walk through the historic maze garden nearby."},
-      {"title": "Velodrome", "note": "See the 1984 Velodrome, constructed in preparation for the bid for the 1992 Olympics"},
-      {"title": "Viewpoint", "note": "Enjoy hillside views looking back toward the city."}
+      {"title": "Velodrome", "note": "See the 1984 Velodrome, constructed in preparation for the bid for the 1992 Olympics"}
     ],
     "tags": ["park","nature","viewpoint"],
     "mood": "relaxed",
@@ -51,5 +50,109 @@
       { "src": "photos/mundet-32.jpg", "caption": "Inside the Velodrom"},
       { "src": "photos/mundet-33.jpg", "caption": "Back home via Mundet"}
       ]
-  }
+  },
+{
+"name": "Sagrada Família",
+"slug": "sagrada-familia",
+"lines": ["L2", "L5"],
+"district": "Eixample",
+"coords": [41.4036, 2.1744],
+"visited": false,
+"activities": [
+{"title": "Sketch", "note": "Facade details."},
+{"title": "Coffee", "note": "Around Avinguda Gaudí."}
+],
+"tags": ["architecture", "gaudi", "touristy"],
+"gallery": [
+{"src": "photos/sagrada-1.jpg", "caption": "Basilica from the square"},
+{"src": "photos/sagrada-2.jpg", "caption": "Nativity facade detail"}
+]
+},
+{
+"name": "Barceloneta",
+"slug": "barceloneta",
+"lines": ["L4"],
+"district": "Ciutat Vella",
+"coords": [41.3809, 2.1896],
+"visited": false,
+"activities": [
+{"title": "Beach Walk", "note": "Passeig Marítim."},
+{"title": "Seafood", "note": "Tapas near the market."}
+],
+"tags": ["beach", "seafood", "sunset"],
+"gallery": [
+{"src": "photos/barceloneta-1.jpg", "caption": "Boardwalk"},
+{"src": "photos/barceloneta-2.jpg", "caption": "Golden hour"}
+]
+},
+{
+"name": "Jaume I",
+"slug": "jaume-i",
+"lines": ["L4"],
+"district": "Ciutat Vella",
+"coords": [41.3839, 2.1791],
+"visited": true,
+"visitedDate": "2025-08-20",
+"activities": [
+{"title": "Gothic Quarter", "note": "Short photo walk."},
+{"title": "Gelato", "note": "Plaça Sant Jaume."}
+],
+"tags": ["gothic", "history", "alleys"],
+"gallery": [
+{"src": "photos/jaume-1.jpg", "caption": "Argenteria street"},
+{"src": "photos/jaume-2.jpg", "caption": "Yellow L4 signage"}
+]
+},
+{
+"name": "Lesseps",
+"slug": "lesseps",
+"lines": ["L3"],
+"district": "Gràcia",
+"coords": [41.4063, 2.1518],
+"visited": false,
+"activities": [
+{"title": "Plaça Lesseps", "note": "People-watching."},
+{"title": "Gràcia", "note": "Walk up to Plaça de la Vila."}
+],
+"tags": ["gràcia", "neighborhood", "walks"],
+"gallery": [
+{"src": "photos/lesseps-1.jpg", "caption": "Plaça Lesseps"},
+{"src": "photos/lesseps-2.jpg", "caption": "Green line platform"}
+]
+},
+{
+"name": "Drassanes",
+"slug": "drassanes",
+"lines": ["L3"],
+"district": "Ciutat Vella",
+"coords": [41.3757, 2.1759],
+"visited": false,
+"activities": [
+{"title": "Port Vell", "note": "Short harbor loop."},
+{"title": "Maritime Museum", "note": "Note opening hours."}
+],
+"tags": ["harbor", "museum", "ramblas"],
+"gallery": [
+{"src": "photos/drassanes-1.jpg", "caption": "Portal de la Pau"},
+{"src": "photos/drassanes-2.jpg", "caption": "Harbor reflections"}
+]
+},
+{
+"name": "Passeig de Gràcia",
+"slug": "passeig-de-gracia",
+"lines": ["L2", "L3", "L4"],
+"district": "Eixample",
+"coords": [41.3913, 2.1662],
+"visited": false,
+"activities": [
+{"title": "Modernisme", "note": "Casa Batlló, La Pedrera exteriors."},
+{"title": "Window shop", "note": "Passeig de Gràcia."}
+],
+"tags": ["modernisme", "shopping", "boulevard"],
+"gallery": [
+{"src": "photos/pdg-1.jpg", "caption": "Tiles and streetlights"},
+{"src": "photos/pdg-2.jpg", "caption": "Corner of Passeig de Gràcia"}
+]
+}
+
 ]
