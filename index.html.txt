@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Barcelona Metro Project</title>
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Fuse.js (search) -->
+  <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2"></script>
+
+  <style>
+    :root {
+      --bg: #0f0f12;        /* charcoal */
+      --fg: #f5f5f7;        /* off-white */
+      --muted: #9aa0a6;
+      --card: #17171b;
+      --accent: #ff4655;    /* you can tweak */
+      --radius: 16px;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; background: var(--bg); color: var(--fg);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
+      display: grid; grid-template-rows: auto 1fr;
+    }
+    header {
+      padding: 16px 20px; border-bottom: 1px solid #232327;
+      display: flex; gap: 16px; align-items: center; justify-content: space-between;
+    }
+    .brand { font-weight: 650; letter-spacing: .2px; }
+    .progress { font-size: 14px; color: var(--muted); }
+    main {
+      display: grid; grid-template-columns: 1fr 420px; gap: 0;
+      height: calc(100vh - 64px);
+    }
+    #map { width: 100%; height: 100%; }
+    aside {
+      border-left: 1px solid #232327; height: 100%;
+      display: grid; grid-template-rows: auto 1fr;
+      background: #0f0f12cc; backdrop-filter: blur(4px);
+    }
+    .controls { padding: 14px; display: grid; gap: 12px; border-bottom: 1px solid #232327; }
+    .search {
+      display: flex; gap: 8px; align-items: center;
+      background: var(--card); border-radius: var(--radius); padding: 10px 12px;
+    }
+    .search input {
+      background: transparent; border: 0; outline: 0; color: var(--fg); width: 100%;
+    }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip {
+      font-size: 12px; padding: 6px 10px; border-radius: 999px;
+      border: 1px solid #2a2a30; cursor: pointer; user-select: none;
+    }
+    .chip.active { border-color: var(--accent); color: var(--accent); }
+    .list { overflow: auto; padding: 10px 10px 18px; }
+    .card {
+      background: var(--card); border: 1px solid #232327; border-radius: var(--radius);
+      padding: 12px; margin: 10px; display: grid; gap: 8px; cursor: pointer;
+    }
+    .meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .badge {
+      font-size: 11px; padding: 4px 8px; border-radius: 999px; background: #202028; border: 1px solid #2a2a30;
+    }
+    .visited { color: #69db7c; border-color: #2f5d3a; background: #18311f; }
+    .thumbs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .thumbs img { width: 100%; height: 84px; object-fit: cover; border-radius: 10px; }
+
+    /* Modal */
+    .modal {
+      position: fixed; inset: 0; background: #000000a8; display: none;
+      align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal.open { display: flex; }
+    .sheet {
+      width: min(920px, 100%); max-height: 85vh; overflow: auto;
+      background: var(--card); border: 1px solid #232327; border-radius: 20px; padding: 18px;
+      display: grid; gap: 14px;
+    }
+    .sheet .gallery { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px; }
+    .sheet .gallery img { width: 100%; height: 220px; object-fit: cover; border-radius: 12px; }
+    .close {
+      position: sticky; top: 0; margin-left: auto; background: #202028; border: 1px solid #2a2a30;
+      color: var(--fg); padding: 6px 10px; border-radius: 999px; cursor: pointer;
+    }
+
+    /* Leaflet dark tweak */
+    .leaflet-popup-content-wrapper, .leaflet-popup-tip { background: #202028; color: var(--fg); }
+    .leaflet-control-zoom a { background: #202028; color: var(--fg); border: 1px solid #2a2a30; }
+    @media (max-width: 900px) {
+      main { grid-template-columns: 1fr; }
+      aside { position: absolute; inset: auto 0 0 0; height: 40vh; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">Barcelona Metro Project</div>
+    <div class="progress" id="progress">Loading…</div>
+  </header>
+
+  <main>
+    <div id="map"></div>
+    <aside>
+      <div class="controls">
+        <div class="search">
+          <input id="search" type="search" placeholder="Search stations, tags, lines…" />
+        </div>
+        <div class="chips" id="lineChips"></div>
+      </div>
+      <div class="list" id="list"></div>
+    </aside>
+  </main>
+
+  <!-- Modal for Station Detail -->
+  <div class="modal" id="modal">
+    <div class="sheet" id="sheet">
+      <button class="close" id="closeBtn">Close</button>
+      <div id="sheetContent"></div>
+    </div>
+  </div>
+
+  <!-- Minimal sample data; replace with stations.json fetch later -->
+  <script>
+  const STATION_DATA = [
+    {
+      name: "Arc de Triomf", slug: "arc-de-triomf", lines: ["L1"], district: "Eixample",
+      coords: [41.3910, 2.1800], visited: true, visitedDate: "2025-08-10",
+      activities: [
+        {title: "Coffee", note: "Espresso & croissant"},
+        {title: "Walk", note: "Passeig Lluís Companys"},
+        {title: "Sketch", note: "Quick pencil of the arch"}
+      ],
+      tags: ["coffee","walk","architecture"], mood: "curious", rating: 4,
+      gallery: ["photos/arc-1.jpg","photos/arc-2.jpg","photos/arc-3.jpg"],
+      notes: "Red brick arch, buskers, warm sunset light."
+    },
+    {
+      name: "Sagrada Família", slug: "sagrada-familia", lines: ["L2","L5"], district: "Eixample",
+      coords: [41.4036, 2.1744], visited: false, tags: ["iconic","architecture"], mood: null, rating: null,
+      activities: [], gallery: ["photos/sf-1.jpg","photos/sf-2.jpg","photos/sf-3.jpg"], notes: ""
+    },
+    {
+      name: "La Sagrera", slug: "la-sagrera", lines: ["L1","L5","L9N","L10N"], district: "Sant Andreu",
+      coords: [41.4227, 2.1899], visited: false, tags: ["interchange"], activities: [], gallery: [], notes: ""
+    }
+  ];
+  </script>
+
+  <script>
+    // Line colors (tweak as you like)
+    const LINE_COLORS = {
+      L1: "#e1332d", L2: "#7a2d7a", L3: "#007f4e", L4: "#f0c30f", L5: "#0079c1",
+      L9N: "#ef7d00", L9S: "#ef7d00", L10N: "#00a8b5", L10S: "#00a8b5", L11: "#84bd00"
+    };
+
+    const map = L.map("map", { zoomControl: true }).setView([41.387, 2.17], 12);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "&copy; OpenStreetMap"
+    }).addTo(map);
+
+    const markers = [];
+    const listEl = document.getElementById("list");
+    const chipsEl = document.getElementById("lineChips");
+    const progressEl = document.getElementById("progress");
+    const modal = document.getElementById("modal");
+    const sheetContent = document.getElementById("sheetContent");
+    document.getElementById("closeBtn").onclick = () => modal.classList.remove("open");
+    modal.addEventListener("click", (e) => { if (e.target === modal) modal.classList.remove("open"); });
+
+    // Build line chips
+    const allLines = [...new Set(STATION_DATA.flatMap(s => s.lines))].sort();
+    const activeLines = new Set(); // empty = all
+    allLines.forEach(line => {
+      const chip = document.createElement("button");
+      chip.className = "chip";
+      chip.textContent = line;
+      chip.style.borderColor = LINE_COLORS[line] || "#2a2a30";
+      chip.onclick = () => {
+        if (activeLines.has(line)) activeLines.delete(line); else activeLines.add(line);
+        chip.classList.toggle("active");
+        render();
+      };
+      chipsEl.appendChild(chip);
+    });
+
+    // Search
+    const fuse = new Fuse(STATION_DATA, {
+      keys: ["name","tags","lines"], threshold: 0.3, includeScore: false
+    });
+    let searchQuery = "";
+    document.getElementById("search").addEventListener("input", (e) => {
+      searchQuery = e.target.value.trim();
+      render();
+    });
+
+    function stationMatchesFilters(s) {
+      const lineOk = activeLines.size === 0 || s.lines.some(l => activeLines.has(l));
+      if (!searchQuery) return lineOk;
+      const results = fuse.search(searchQuery).map(r => r.item.slug);
+      return lineOk && results.includes(s.slug);
+    }
+
+    function markerForStation(s) {
+      const color = LINE_COLORS[s.lines[0]] || "#888";
+      const icon = L.divIcon({
+        html: `<div style="
+          background:${color}; width:12px; height:12px; border-radius:50%;
+          outline: 2px solid #fff; box-shadow:0 0 0 2px rgba(0,0,0,.4);
+        "></div>`,
+        className: "", iconSize: [12,12]
+      });
+      const m = L.marker(s.coords, { icon }).addTo(map).bindPopup(`<b>${s.name}</b><br>${s.lines.join(" · ")}`);
+      m.on("click", () => openStation(s));
+      return m;
+    }
+
+    function openStation(s) {
+      sheetContent.innerHTML = `
+        <h2 style="margin:6px 0 4px">${s.name}</h2>
+        <div class="meta">
+          ${s.lines.map(l => `<span class="badge" style="border-color:${LINE_COLORS[l]||'#2a2a30'}">${l}</span>`).join("")}
+          ${s.visited ? `<span class="badge visited">Visited ${s.visitedDate ? "· " + s.visitedDate : ""}</span>` : ""}
+          ${s.district ? `<span class="badge">${s.district}</span>` : ""}
+        </div>
+        ${s.gallery?.length ? `
+          <div class="gallery">
+            ${s.gallery.slice(0,1).map(src=>`<img src="${src}" alt="">`).join("")}
+            ${s.gallery.slice(1,3).map(src=>`<img src="${src}" alt="">`).join("")}
+          </div>` : ``}
+        ${s.activities?.length ? `
+          <div>
+            <h3 style="margin:12px 0 6px; font-size:15px;">Activities</h3>
+            <ul>
+              ${s.activities.map(a => `<li><b>${a.title}</b> — ${a.note||""}</li>`).join("")}
+            </ul>
+          </div>` : ``}
+        ${s.notes ? `<p style="color:var(--muted)">${s.notes}</p>` : ``}
+        ${s.tags?.length ? `<div class="meta">${s.tags.map(t=>`<span class="badge">#${t}</span>`).join("")}</div>`:""}
+      `;
+      modal.classList.add("open");
+    }
+
+    function render() {
+      // Progress
+      const visited = STATION_DATA.filter(s => s.visited).length;
+      progressEl.textContent = `${visited}/${STATION_DATA.length} stations visited`;
+
+      // Clear markers
+      markers.forEach(m => map.removeLayer(m));
+      markers.length = 0;
+
+      // Filtered stations
+      const filtered = STATION_DATA.filter(stationMatchesFilters).sort((a,b)=>a.name.localeCompare(b.name));
+
+      // Re-add markers & list
+      listEl.innerHTML = "";
+      filtered.forEach(s => {
+        const marker = markerForStation(s);
+        markers.push(marker);
+
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <div style="display:flex; align-items:center; justify-content:space-between;">
+            <div style="font-weight:600">${s.name}</div>
+            <div class="meta">${s.lines.map(l=>`<span class="badge" style="border-color:${LINE_COLORS[l]||'#2a2a30'}">${l}</span>`).join("")}</div>
+          </div>
+          ${s.gallery?.length ? `<div class="thumbs">${s.gallery.slice(0,3).map(src=>`<img src="${src}" alt="">`).join("")}</div>` : ``}
+          <div class="meta">
+            ${s.visited ? `<span class="badge visited">Visited</span>` : `<span class="badge">Planned</span>`}
+            ${s.district ? `<span class="badge">${s.district}</span>` : ""}
+            ${(s.tags||[]).slice(0,3).map(t=>`<span class="badge">#${t}</span>`).join("")}
+          </div>
+        `;
+        card.onclick = () => { openStation(s); map.setView(s.coords, 15); };
+        listEl.appendChild(card);
+      });
+
+      // Fit map to filtered markers
+      if (filtered.length) {
+        const group = new L.featureGroup(markers);
+        map.fitBounds(group.getBounds().pad(0.2));
+      }
+    }
+
+    render();
+  </script>
+</body>
+</html>
