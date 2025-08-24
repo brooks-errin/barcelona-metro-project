@@ -301,58 +301,89 @@
       return m;
     }
 
-    function openStation(s) {
-      const gal = normalizeGallery(s.gallery);
+function openStation(s) {
+  const gal = normalizeGallery(s.gallery);
 
-      let html = '';
-      html += '<h2 style="margin:6px 0 4px">' + s.name + '</h2>';
-      html += '<div class="meta">';
-      (s.lines || []).forEach((l) => { html += '<span class="badge" style="border-color:' + (LINE_COLORS[l] || '#2a2a30') + '">' + l + '</span>'; });
-      if (s.visited) html += '<span class="badge visited">Visited' + (s.visitedDate ? ' · ' + s.visitedDate : '') + '</span>';
-      if (s.district) html += '<span class="badge">' + s.district + '</span>';
-      html += '</div>';
+  // Build base HTML
+  let html = '';
+  html += '<h2 style="margin:6px 0 4px">' + s.name + '</h2>';
+  html += '<div class="meta">';
+  (s.lines || []).forEach((l) => {
+    html += '<span class="badge" style="border-color:' + (LINE_COLORS[l] || '#2a2a30') + '">' + l + '</span>';
+  });
+  if (s.visited)  html += '<span class="badge visited">Visited' + (s.visitedDate ? ' · ' + s.visitedDate : '') + '</span>';
+  if (s.district) html += '<span class="badge">' + s.district + '</span>';
+  html += '</div>';
 
-      if (gal.length) {
-        html += '<div class="gallery-wrap">';
-        html += '  <button class="gallery-arrow left" id="gPrev" aria-label="Scroll left">◀</button>';
-        html += '  <button class="gallery-arrow right" id="gNext" aria-label="Scroll right">▶</button>';
-        html += '  <div class="gallery-row" id="gRow">';
-        gal.forEach((g, idx) => { const alt = (g.alt || ('Photo of ' + s.name)).replace(/"/g, '&quot;'); html += '    <img data-idx="' + idx + '" src="' + g.src + '" alt="' + alt + '">'; });
-        html += '  </div>';
-        html += '</div>';
-      }
+  if (gal.length) html += '<div id="galleryMount"></div>';
 
-      const acts = s.activities || [];
-      if (acts.length) {
-        html += '<div><h3 style="margin:12px 0 6px; font-size:15px;">Activities</h3><ul>';
-        acts.forEach((a) => { html += '<li><b>' + a.title + '</b> — ' + (a.note || '') + '</li>'; });
-        html += '</ul></div>';
-      }
+  const acts = s.activities || [];
+  if (acts.length) {
+    html += '<div><h3 style="margin:12px 0 6px; font-size:15px;">Activities</h3><ul>';
+    acts.forEach((a) => { html += '<li><b>' + a.title + '</b> — ' + (a.note || '') + '</li>'; });
+    html += '</ul></div>';
+  }
+  if (s.notes) html += '<p style="color:var(--muted)">' + s.notes + '</p>';
 
-      if (s.notes) html += '<p style="color:var(--muted)">' + s.notes + '</p>';
+  const tags = s.tags || [];
+  if (tags.length) {
+    html += '<div class="meta">';
+    tags.forEach((t) => { html += '<span class="badge">#' + t + '</span>'; });
+    html += '</div>';
+  }
 
-      const tags = s.tags || [];
-      if (tags.length) { html += '<div class="meta">'; tags.forEach((t) => { html += '<span class="badge">#' + t + '</span>'; }); html += '</div>'; }
+  // Inject + open modal first
+  sheetContent.innerHTML = html;
+  modal.classList.add('open');
+  modal.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('modal-open');
 
-      // Inject and open modal
-      sheetContent.innerHTML = html;
-      modal.classList.add('open');
-      modal.setAttribute('aria-hidden', 'false');
-      document.body.classList.add('modal-open');
+  // Build gallery DOM programmatically (guarantees both arrows exist)
+  if (gal.length) {
+    const mount = document.getElementById('galleryMount');
+    const wrap  = document.createElement('div');
+    wrap.className = 'gallery-wrap';
 
-      // Wire gallery after inject
-      if (gal.length) {
-        const gRow  = document.getElementById('gRow');
-        const gPrev = document.getElementById('gPrev');
-        const gNext = document.getElementById('gNext');
-        const firstImg = gRow.querySelector('img');
-        const gap = 8;
-        const getStep = () => (firstImg ? firstImg.clientWidth + gap : Math.max(300, gRow.clientWidth * 0.8));
-        gPrev.onclick = () => gRow.scrollBy({ left: -getStep(), behavior: 'smooth' });
-        gNext.onclick = () => gRow.scrollBy({ left:  getStep(), behavior: 'smooth' });
-        gRow.querySelectorAll('img').forEach(img => { img.addEventListener('click', (e) => { const idx = parseInt(e.currentTarget.getAttribute('data-idx'), 10) || 0; openLightbox(gal, idx, s.name); }); });
-      }
-    }
+    const prev  = document.createElement('button');
+    prev.className = 'gallery-arrow left';
+    prev.id = 'gPrev';
+    prev.setAttribute('aria-label','Scroll left');
+    prev.textContent = '◀';
+
+    const next  = document.createElement('button');
+    next.className = 'gallery-arrow right';
+    next.id = 'gNext';
+    next.setAttribute('aria-label','Scroll right');
+    next.textContent = '▶';
+
+    const row   = document.createElement('div');
+    row.className = 'gallery-row';
+    row.id = 'gRow';
+
+    gal.forEach((g, idx) => {
+      const img = document.createElement('img');
+      img.src = g.src;
+      img.alt = g.alt || ('Photo of ' + s.name);
+      img.setAttribute('data-idx', idx);
+      img.addEventListener('click', () => openLightbox(gal, idx, s.name));
+      row.appendChild(img);
+    });
+
+    wrap.appendChild(prev);
+    wrap.appendChild(next);
+    wrap.appendChild(row);
+    mount.appendChild(wrap);
+
+    const gap = 8;
+    const getStep = () => {
+      const firstImg = row.querySelector('img');
+      return firstImg ? firstImg.clientWidth + gap : Math.max(300, row.clientWidth * 0.8);
+    };
+    prev.onclick = () => row.scrollBy({ left: -getStep(), behavior: 'smooth' });
+    next.onclick = () => row.scrollBy({ left:  getStep(), behavior: 'smooth' });
+  }
+}
+
 
     // ------------------------------
     // Render
