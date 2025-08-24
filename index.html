@@ -73,14 +73,19 @@
 
     /* Modal */
     .modal {
-      position: fixed; inset: 0; background: #000000a8; display: none;
-      align-items: center; justify-content: center; padding: 20px;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.85); /* darker backdrop */
+      display: none; align-items: center; justify-content: center; padding: 20px;
+      z-index: 100000; /* on top of Leaflet panes */
     }
     .modal.open { display: flex; }
     .sheet {
       width: min(920px, 100%); max-height: 85vh; overflow: auto;
       background: var(--card); border: 1px solid #232327; border-radius: 20px; padding: 18px;
       display: grid; gap: 14px;
+      box-shadow: 0 24px 80px rgba(0,0,0,.65);
+      position: relative; z-index: 100001;
+      animation: pop .18s ease-out;
     }
     .sheet .gallery { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px; }
     .sheet .gallery img { width: 100%; height: 220px; object-fit: cover; border-radius: 12px; }
@@ -88,19 +93,22 @@
       position: sticky; top: 0; margin-left: auto; background: #202028; border: 1px solid #2a2a30;
       color: var(--fg); padding: 6px 10px; border-radius: 999px; cursor: pointer;
     }
+    @keyframes pop { from { opacity: 0; transform: translateY(6px) scale(.98); } to { opacity: 1; transform: none; } }
 
-    /* Leaflet dark tweak */
+    /* Leaflet dark tweak & stacking reset under modal */
+    #map { position: relative; z-index: 0; }
     .leaflet-popup-content-wrapper, .leaflet-popup-tip { background: #202028; color: var(--fg); }
     .leaflet-control-zoom a { background: #202028; color: var(--fg); border: 1px solid #2a2a30; }
+    .leaflet-pane, .leaflet-top, .leaflet-bottom { z-index: 0 !important; }
+
+    /* Lock background when modal is open */
+    body.modal-open { overflow: hidden; }
+
     @media (max-width: 900px) {
       main { grid-template-columns: 1fr; }
       aside { position: absolute; inset: auto 0 0 0; height: 40vh; }
     }
-      /* Modal overrides to ensure visibility */
-    .modal { z-index: 10000; }
-    .sheet { box-shadow: 0 24px 80px rgba(0,0,0,.6); animation: pop .18s ease-out; }
-    @keyframes pop { from { opacity: 0; transform: translateY(6px) scale(.98); } to { opacity: 1; transform: none; } }
-</style>
+  </style>
 </head>
 <body>
   <header>
@@ -161,21 +169,29 @@
     document.getElementById("closeBtn").onclick = () => {
       modal.classList.remove("open");
       modal.setAttribute("aria-hidden", "true");
+      document.body.classList.remove("modal-open");
     };
-    modal.addEventListener("click", (e) => { if (e.target === modal) { modal.classList.remove("open"); modal.setAttribute("aria-hidden", "true"); } });
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) {
+        modal.classList.remove("open");
+        modal.setAttribute("aria-hidden", "true");
+        document.body.classList.remove("modal-open");
+      }
+    });
 
     // ------------------------------
     // Data loader
     // ------------------------------
     function loadStations() {
-      // Cache-bust with version param if needed
       const dataUrl = new URL('stations.json', window.location.href);
-      // cache-bust to avoid stale copies
-      dataUrl.searchParams.set('v', Date.now().toString());
+      dataUrl.searchParams.set('v', Date.now().toString()); // cache-bust
       return fetch(dataUrl)
-        .then((r) => { if (!r.ok) throw new Error(`stations.json not found (HTTP ${r.status})`); return r.json(); })
-        .then((data) => { STATION_DATA = data; }); return r.json(); }
-          
+        .then((r) => {
+          if (!r.ok) throw new Error(`stations.json not found (HTTP ${r.status})`);
+          return r.json();
+        })
+        .then((data) => { STATION_DATA = data; });
+    }
 
     // ------------------------------
     // UI builders (run AFTER data loads)
@@ -209,8 +225,7 @@
       const lineOk = activeLines.size === 0 || (Array.isArray(s.lines) && s.lines.some((l) => activeLines.has(l)));
       const statusOk = true; // reserved for future status filter
       if (!searchQuery) return lineOk && statusOk;
-      // Guard: if fuse not ready yet, treat as no search results
-      if (!fuse) return false;
+      if (!fuse) return false; // Fuse not ready
       const results = new Set(fuse.search(searchQuery).map((r) => r.item.slug));
       return lineOk && statusOk && results.has(s.slug);
     }
@@ -227,54 +242,54 @@
     }
 
     function openStation(s) {
-  const gallery = (s.gallery || []).slice(0, 3);
+      const gallery = (s.gallery || []).slice(0, 3);
 
-  let html = '';
-  html += '<h2 style="margin:6px 0 4px">' + s.name + '</h2>';
-  html += '<div class="meta">';
-  (s.lines || []).forEach((l) => {
-    html += '<span class="badge" style="border-color:' + (LINE_COLORS[l] || '#2a2a30') + '">' + l + '</span>';
-  });
-  if (s.visited) {
-    html += '<span class="badge visited">Visited' + (s.visitedDate ? ' · ' + s.visitedDate : '') + '</span>';
-  }
-  if (s.district) {
-    html += '<span class="badge">' + s.district + '</span>';
-  }
-  html += '</div>';
+      let html = '';
+      html += '<h2 style="margin:6px 0 4px">' + s.name + '</h2>';
+      html += '<div class="meta">';
+      (s.lines || []).forEach((l) => {
+        html += '<span class="badge" style="border-color:' + (LINE_COLORS[l] || '#2a2a30') + '">' + l + '</span>';
+      });
+      if (s.visited) {
+        html += '<span class="badge visited">Visited' + (s.visitedDate ? ' · ' + s.visitedDate : '') + '</span>';
+      }
+      if (s.district) {
+        html += '<span class="badge">' + s.district + '</span>';
+      }
+      html += '</div>';
 
-  if (gallery.length) {
-    html += '<div class="gallery">';
-    html += '<img src="' + gallery[0] + '" alt="Photo of ' + s.name + '">';
-    for (let i = 1; i < gallery.length; i++) {
-      html += '<img src="' + gallery[i] + '" alt="Photo of ' + s.name + '">';
+      if (gallery.length) {
+        html += '<div class="gallery">';
+        html += '<img src="' + gallery[0] + '" alt="Photo of ' + s.name + '">';
+        for (let i = 1; i < gallery.length; i++) {
+          html += '<img src="' + gallery[i] + '" alt="Photo of ' + s.name + '">';
+        }
+        html += '</div>';
+      }
+
+      const acts = s.activities || [];
+      if (acts.length) {
+        html += '<div><h3 style="margin:12px 0 6px; font-size:15px;">Activities</h3><ul>';
+        acts.forEach((a) => {
+          html += '<li><b>' + a.title + '</b> — ' + (a.note || '') + '</li>';
+        });
+        html += '</ul></div>';
+      }
+
+      if (s.notes) html += '<p style="color:var(--muted)">' + s.notes + '</p>';
+
+      const tags = s.tags || [];
+      if (tags.length) {
+        html += '<div class="meta">';
+        tags.forEach((t) => { html += '<span class="badge">#' + t + '</span>'; });
+        html += '</div>';
+      }
+
+      sheetContent.innerHTML = html;
+      modal.classList.add('open');
+      modal.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('modal-open'); /* lock bg scroll */
     }
-    html += '</div>';
-  }
-
-  const acts = s.activities || [];
-  if (acts.length) {
-    html += '<div><h3 style="margin:12px 0 6px; font-size:15px;">Activities</h3><ul>';
-    acts.forEach((a) => {
-      html += '<li><b>' + a.title + '</b> — ' + (a.note || '') + '</li>';
-    });
-    html += '</ul></div>';
-  }
-
-  if (s.notes) html += '<p style="color:var(--muted)">' + s.notes + '</p>';
-
-  const tags = s.tags || [];
-  if (tags.length) {
-    html += '<div class="meta">';
-    tags.forEach((t) => { html += '<span class="badge">#' + t + '</span>'; });
-    html += '</div>';
-  }
-
-  sheetContent.innerHTML = html;
-  modal.classList.add('open');
-  modal.setAttribute('aria-hidden', 'false');
-}
-
 
     // ------------------------------
     // Render
@@ -299,30 +314,30 @@
 
         const card = document.createElement("div");
         card.className = "card";
-        const linesHtml   = (s.lines || []).map((l) =>
-  '<span class="badge" style="border-color:' + (LINE_COLORS[l] || '#2a2a30') + '">' + l + '</span>'
-).join('');
+        const linesHtml = (s.lines || []).map((l) =>
+          '<span class="badge" style="border-color:' + (LINE_COLORS[l] || '#2a2a30') + '">' + l + '</span>'
+        ).join('');
 
-const thumbsHtml  = (s.gallery || []).slice(0, 3).map((src) =>
-  '<img src="' + src + '" alt="Thumbnail of ' + s.name + '">'
-).join('');
+        const thumbsHtml = (s.gallery || []).slice(0, 3).map((src) =>
+          '<img src="' + src + '" alt="Thumbnail of ' + s.name + '">'
+        ).join('');
 
-const tagsHtml    = (s.tags || []).slice(0, 3).map((t) =>
-  '<span class="badge">#' + t + '</span>'
-).join('');
+        const tagsHtml = (s.tags || []).slice(0, 3).map((t) =>
+          '<span class="badge">#' + t + '</span>'
+        ).join('');
 
-card.innerHTML = `
-  <div style="display:flex; align-items:center; justify-content:space-between;">
-    <div style="font-weight:600">${s.name}</div>
-    <div class="meta">${linesHtml}</div>
-  </div>
-  ${thumbsHtml ? '<div class="thumbs">' + thumbsHtml + '</div>' : ''}
-  <div class="meta">
-    ${s.visited ? '<span class="badge visited">Visited</span>' : '<span class="badge">Planned</span>'}
-    ${s.district ? '<span class="badge">' + s.district + '</span>' : ''}
-    ${tagsHtml}
-  </div>
-`;
+        card.innerHTML = `
+          <div style="display:flex; align-items:center; justify-content:space-between;">
+            <div style="font-weight:600">${s.name}</div>
+            <div class="meta">${linesHtml}</div>
+          </div>
+          ${thumbsHtml ? '<div class="thumbs">' + thumbsHtml + '</div>' : ''}
+          <div class="meta">
+            ${s.visited ? '<span class="badge visited">Visited</span>' : '<span class="badge">Planned</span>'}
+            ${s.district ? '<span class="badge">' + s.district + '</span>' : ''}
+            ${tagsHtml}
+          </div>
+        `;
 
         card.onclick = () => { openStation(s); map.setView(s.coords, 15); };
         listEl.appendChild(card);
