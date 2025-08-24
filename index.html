@@ -128,6 +128,18 @@
 /* Extra space between the top badges (.meta) and the gallery */
 .sheet #sheetContent > .meta:first-of-type { margin-bottom: 16px; } /* try 16–24px */
 
+/* --- FIX: arrows above images and clickable --- */
+.sheet .gallery-wrap { position: relative; }
+.sheet .gallery-row { position: relative; z-index: 1; padding: 0 40px; } /* space so arrows aren’t on top of images */
+.gallery-arrow { position: absolute; z-index: 5; pointer-events: auto; display: grid; place-items: center; width: 36px; height: 36px; }
+.gallery-arrow.left  { left: 8px; }
+.gallery-arrow.right { right: 8px; }
+
+/* fades stay under arrows */
+.sheet .gallery-wrap::before,
+.sheet .gallery-wrap::after { z-index: 2; }
+
+
 
   </style>
 </head>
@@ -432,9 +444,9 @@ function openStation(s) {
       row.appendChild(img);
     });
 
+    wrap.appendChild(row);
     wrap.appendChild(prev);
     wrap.appendChild(next);
-    wrap.appendChild(row);
     mount.appendChild(wrap);
 
     const gap = 8;
