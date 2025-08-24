@@ -475,128 +475,82 @@ function openStation(s) {
 }
 
 
-    wrap.appendChild(prev);
-    wrap.appendChild(next);
-    wrap.appendChild(row);
-    mount.appendChild(wrap);
-
-    const gap = 8;
-    const getStep = () => {
-      const firstImg = row.querySelector('img');
-      return firstImg ? firstImg.clientWidth + gap : Math.max(300, row.clientWidth * 0.8);
-    };
-    prev.onclick = () => row.scrollBy({ left: -getStep(), behavior: 'smooth' });
-    next.onclick = () => row.scrollBy({ left:  getStep(), behavior: 'smooth' });
-
 
     // ------------------------------
     // Render
     // ------------------------------
     function render() {
-      const visited = STATION_DATA.filter((s) => s.visited).length;
-      progressEl.textContent = `${visited}/${STATION_DATA.length} stations visited`;
+  const visited = STATION_DATA.filter((s) => s.visited).length;
+  progressEl.textContent = `${visited}/${STATION_DATA.length} stations visited`;
 
-      markers.forEach((m) => map.removeLayer(m));
-      markers.length = 0;
+  // Clear markers
+  markers.forEach((m) => map.removeLayer(m));
+  markers.length = 0;
 
-      const filtered = STATION_DATA.filter(stationMatchesFilters).sort((a, b) => a.name.localeCompare(b.name));
+  // Filter + sort
+  const filtered = STATION_DATA
+    .filter(stationMatchesFilters)
+    .sort((a, b) => a.name.localeCompare(b.name));
 
-      listEl.innerHTML = "";
-      filtered.forEach((s) => {
-  const marker = markerForStation(s);
-  markers.push(marker);
+  // Rebuild list
+  listEl.innerHTML = "";
+  filtered.forEach((s) => {
+    const marker = markerForStation(s);
+    markers.push(marker);
 
-  const card = document.createElement("div");
-  card.className = "card";
+    const card = document.createElement("div");
+    card.className = "card";
 
-  const linesHtml = (s.lines || []).map((l) =>
-    '<span class="badge" style="border-color:' + (LINE_COLORS[l] || '#2a2a30') + '">' + l + '</span>'
-  ).join('');
+    const linesHtml = (s.lines || []).map((l) =>
+      '<span class="badge" style="border-color:' + (LINE_COLORS[l] || '#2a2a30') + '">' + l + '</span>'
+    ).join('');
 
-  const tagsHtml = (s.tags || []).slice(0, 3).map((t) =>
-    '<span class="badge">#' + t + '</span>'
-  ).join('');
+    const tagsHtml = (s.tags || []).slice(0, 3).map((t) =>
+      '<span class="badge">#' + t + '</span>'
+    ).join('');
 
-  const localThumbs = (s.gallery || []).slice(0, 3).map((src) =>
-    '<img src="' + (typeof src === 'string' ? src : src.src) + '" alt="Thumbnail of ' + s.name + '">'
-  ).join('');
+    const localThumbs = (s.gallery || []).slice(0, 3).map((src) =>
+      '<img src="' + (typeof src === 'string' ? src : src.src) + '" alt="Thumbnail of ' + s.name + '">'
+    ).join('');
 
-  card.innerHTML = `
-    <div style="display:flex; align-items:center; justify-content:space-between;">
-      <div style="font-weight:600">${s.name}</div>
-      <div class="meta">${linesHtml}</div>
-    </div>
-    <div class="thumbs" id="thumb-${s.slug}">${localThumbs}</div>
-    <div class="meta">
-      ${s.visited ? '<span class="badge visited">Visited</span>' : '<span class="badge">Planned</span>'}
-      ${s.district ? '<span class="badge">' + s.district + '</span>' : ''}
-      ${tagsHtml}
-    </div>
-  `;
+    card.innerHTML = `
+      <div style="display:flex; align-items:center; justify-content:space-between;">
+        <div style="font-weight:600">${s.name}</div>
+        <div class="meta">${linesHtml}</div>
+      </div>
+      <div class="thumbs" id="thumb-${s.slug}">${localThumbs}</div>
+      <div class="meta">
+        ${s.visited ? '<span class="badge visited">Visited</span>' : '<span class="badge">Planned</span>'}
+        ${s.district ? '<span class="badge">' + s.district + '</span>' : ''}
+        ${tagsHtml}
+      </div>
+    `;
 
-  // If there are no local thumbs, fetch a Wikipedia/Commons preview
-  if (!localThumbs) {
-    const mount = card.querySelector('#thumb-' + s.slug);
-    if (mount) {
-      ensureWikiThumb(s).then(url => {
-        if (url) {
-          mount.innerHTML = '<img src="' + url + '" alt="Preview of ' + s.name + ' (via Wikipedia)">';
-        } else {
-          mount.innerHTML = '';
-        }
-      });
-    }
-  }
-
-  card.onclick = () => { openStation(s); map.setView(s.coords, 15); };
-  listEl.appendChild(card);
-});
-
-
-card.innerHTML = `
-  <div style="display:flex; align-items:center; justify-content:space-between;">
-    <div style="font-weight:600">${s.name}</div>
-    <div class="meta">${linesHtml}</div>
-  </div>
-  <div class="thumbs" id="thumb-${s.slug}">${localThumbs}</div>
-  <div class="meta">
-    ${s.visited ? '<span class="badge visited">Visited</span>' : '<span class="badge">Planned</span>'}
-    ${s.district ? '<span class="badge">' + s.district + '</span>' : ''}
-    ${tagsHtml}
-  </div>
-`;
-
-// If there are no local thumbs, fetch a Wikipedia/Commons preview
-if (!localThumbs) {
-  const mount = card.querySelector('#thumb-' + s.slug);
-  if (mount) {
-    ensureWikiThumb(s).then(url => {
-      if (url) {
-        mount.innerHTML = '<img src="' + url + '" alt="Preview of ' + s.name + ' (via Wikipedia)">'; 
-      } else {
-        mount.innerHTML = ''; // nothing found; keep clean
+    // If there are no local thumbs, fetch a Wikipedia/Commons preview
+    if (!localThumbs) {
+      const mount = card.querySelector('#thumb-' + s.slug);
+      if (mount) {
+        ensureWikiThumb(s).then(url => {
+          if (url) {
+            mount.innerHTML = '<img src="' + url + '" alt="Preview of ' + s.name + ' (via Wikipedia)">';
+          } else {
+            mount.innerHTML = '';
+          }
+        });
       }
-    });
+    }
+
+    card.onclick = () => { openStation(s); map.setView(s.coords, 15); };
+    listEl.appendChild(card);
+  });
+
+  // Fit bounds
+  if (filtered.length) {
+    const group = new L.featureGroup(markers);
+    map.fitBounds(group.getBounds().pad(0.2));
   }
 }
 
-
-        card.innerHTML = `
-          <div style="display:flex; align-items:center; justify-content:space-between;">
-            <div style="font-weight:600">${s.name}</div>
-            <div class="meta">${linesHtml}</div>
-          </div>
-          ${thumbsHtml ? '<div class="thumbs">' + thumbsHtml + '</div>' : ''}
-          <div class="meta">
-            ${s.visited ? '<span class="badge visited">Visited</span>' : '<span class="badge">Planned</span>'}
-            ${s.district ? '<span class="badge">' + s.district + '</span>' : ''}
-            ${tagsHtml}
-          </div>
-        `;
-
-        card.onclick = () => { openStation(s); map.setView(s.coords, 15); };
-        listEl.appendChild(card);
-      };
 
       if (filtered.length) {
         const group = new L.featureGroup(markers);
