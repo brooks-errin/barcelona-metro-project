@@ -479,7 +479,10 @@ function openStation(s) {
     // ------------------------------
     // Render
     // ------------------------------
-    function render() {
+// ------------------------------
+// Render
+// ------------------------------
+function render() {
   const visited = STATION_DATA.filter((s) => s.visited).length;
   progressEl.textContent = `${visited}/${STATION_DATA.length} stations visited`;
 
@@ -502,15 +505,15 @@ function openStation(s) {
     card.className = "card";
 
     const linesHtml = (s.lines || []).map((l) =>
-      '<span class="badge" style="border-color:' + (LINE_COLORS[l] || '#2a2a30') + '">' + l + '</span>'
+      `<span class="badge" style="border-color:${LINE_COLORS[l] || '#2a2a30'}">${l}</span>`
     ).join('');
 
     const tagsHtml = (s.tags || []).slice(0, 3).map((t) =>
-      '<span class="badge">#' + t + '</span>'
+      `<span class="badge">#${t}</span>`
     ).join('');
 
     const localThumbs = (s.gallery || []).slice(0, 3).map((src) =>
-      '<img src="' + (typeof src === 'string' ? src : src.src) + '" alt="Thumbnail of ' + s.name + '">'
+      `<img src="${typeof src === 'string' ? src : src.src}" alt="Thumbnail of ${s.name}">`
     ).join('');
 
     card.innerHTML = `
@@ -521,18 +524,18 @@ function openStation(s) {
       <div class="thumbs" id="thumb-${s.slug}">${localThumbs}</div>
       <div class="meta">
         ${s.visited ? '<span class="badge visited">Visited</span>' : '<span class="badge">Planned</span>'}
-        ${s.district ? '<span class="badge">' + s.district + '</span>' : ''}
+        ${s.district ? `<span class="badge">${s.district}</span>` : ''}
         ${tagsHtml}
       </div>
     `;
 
-    // If there are no local thumbs, fetch a Wikipedia/Commons preview
+    // Wikipedia/Commons fallback if no local images
     if (!localThumbs) {
-      const mount = card.querySelector('#thumb-' + s.slug);
+      const mount = card.querySelector(`#thumb-${s.slug}`);
       if (mount) {
         ensureWikiThumb(s).then(url => {
           if (url) {
-            mount.innerHTML = '<img src="' + url + '" alt="Preview of ' + s.name + ' (via Wikipedia)">';
+            mount.innerHTML = `<img src="${url}" alt="Preview of ${s.name} (via Wikipedia)">`;
           } else {
             mount.innerHTML = '';
           }
@@ -544,18 +547,36 @@ function openStation(s) {
     listEl.appendChild(card);
   });
 
-  // Fit bounds
+  // Fit bounds to visible markers
   if (filtered.length) {
-    const group = new L.featureGroup(markers);
+    const group = L.featureGroup(markers);
     map.fitBounds(group.getBounds().pad(0.2));
   }
 }
 
+// ------------------------------
+// App bootstrap
+// ------------------------------
+function init() {
+  if (!Array.isArray(STATION_DATA)) {
+    console.error("STATION_DATA is not an array", STATION_DATA);
+    progressEl.textContent = "Error: bad data format";
+    listEl.innerHTML = "<p style='padding:12px;color:#bbb'>Data format error.</p>";
+    return;
+  }
+  buildLineChips();
+  setupSearch();
+  render();
+}
 
-      if (filtered.length) {
-        const group = new L.featureGroup(markers);
-        map.fitBounds(group.getBounds().pad(0.2));
-      }
+loadStations()
+  .then(init)
+  .catch((err) => {
+    console.error("Data load failed:", err);
+    listEl.innerHTML = "<p style='padding:12px;color:#bbb'>Couldn’t load stations.json</p>";
+    progressEl.textContent = "Error loading data";
+  });
+
 
 
     // ------------------------------
