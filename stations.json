@@ -6,10 +6,10 @@
     "district": "Horta-Guinardó",
     "coords": [41.4372, 2.1517],
     "visited": true,
-    "visitedDate": "2025-08-24",
+    "visitedDate": "2025-08-18",
     "activities": [
       {"title": "Parc del Laberint d'Horta", "note": "Walk through the historic maze garden nearby."},
-      {"title": "Picnic", "note": "Relax with snacks under the trees around the university campus."},
+      {"title": "Velodrome", "note": "See the 1984 Velodrome, constructed in preparation for the bid for the 1992 Olympics"},
       {"title": "Viewpoint", "note": "Enjoy hillside views looking back toward the city."}
     ],
     "tags": ["park","nature","viewpoint"],
