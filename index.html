@@ -130,13 +130,34 @@
 let STATION_DATA = [];
 
 // Load data from stations.json
-fetch("stations.json")
-  .then(response => response.json())
+<script>
+// keep this at top-level so other code can use it
+let STATION_DATA = [];
+
+// call this after data loads
+function startApp() {
+  // whatever you currently do at the bottom, e.g. render();
+  render();
+}
+
+// Load data from stations.json (add ?v=1 to bust cache if needed)
+fetch("stations.json?v=1")
+  .then(r => {
+    if (!r.ok) throw new Error("stations.json not found");
+    return r.json();
+  })
   .then(data => {
     STATION_DATA = data;
-    render(); // call your render function once data is loaded
+    startApp();
+  })
+  .catch(err => {
+    console.error("Data load failed:", err);
+    // Optional: show a message on the page
+    document.getElementById("list").innerHTML =
+      "<p style='padding:12px;color:#bbb'>Couldn’t load stations.json</p>";
   });
 </script>
+
 
 
   <script>
