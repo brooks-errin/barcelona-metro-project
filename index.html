@@ -102,6 +102,25 @@
       main { grid-template-columns: 1fr; }
       aside { position: absolute; inset: auto 0 0 0; height: 40vh; }
     }
+
+    /* Ensure both gallery arrows are visible and above the fades */
+.sheet .gallery-wrap { position: relative; overflow: hidden; }
+
+/* put fades *under* the arrows */
+.sheet .gallery-wrap::before,
+.sheet .gallery-wrap::after {
+  z-index: 1;
+}
+
+/* arrows above everything in the gallery area */
+.gallery-arrow {
+  z-index: 3;
+}
+
+/* position both arrows inside the gallery */
+.gallery-arrow.left  { left: 8px; }
+.gallery-arrow.right { right: 8px; display: inline-flex; }
+
   </style>
 </head>
 <body>
