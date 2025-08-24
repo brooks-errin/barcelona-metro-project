@@ -390,39 +390,77 @@
     }
 
     function openStation(s) {
-      const gal = normalizeGallery(s.gallery);
+  const gal = normalizeGallery(s.gallery);
 
-      let html = '';
-      html += '<h2 style="margin:6px 0 4px">' + s.name + '</h2>';
-      html += '<div class="meta">';
-      (s.lines || []).forEach((l) => {
-        html += '<span class="badge" style="border-color:' + (LINE_COLORS[l] || '#2a2a30') + '">' + l + '</span>';
-      });
-      if (s.visited) html += '<span class="badge visited">Visited' + (s.visitedDate ? ' · ' + s.visitedDate : '') + '</span>';
-      if (s.district) html += '<span class="badge">' + s.district + '</span>';
-      html += '</div>';
-
-      if (gal.length) {
-  const gRow  = document.getElementById('gRow');
-  const gPrev = document.getElementById('gPrev');
-  const gNext = document.getElementById('gNext');
-
-  // Calculate a step ~ one image width + gap
-  const firstImg = gRow.querySelector('img');
-  const gap = 8;
-  const getStep = () => (firstImg ? firstImg.clientWidth + gap : Math.max(300, gRow.clientWidth * 0.8));
-
-  gPrev.onclick = () => gRow.scrollBy({ left: -getStep(), behavior: 'smooth' });
-  gNext.onclick = () => gRow.scrollBy({ left:  getStep(), behavior: 'smooth' });
-
-  // clicking an image still opens the lightbox
-  gRow.querySelectorAll('img').forEach(img => {
-    img.addEventListener('click', (e) => {
-      const idx = parseInt(e.currentTarget.getAttribute('data-idx'), 10) || 0;
-      openLightbox(gal, idx, s.name);
-    });
+  let html = '';
+  html += '<h2 style="margin:6px 0 4px">' + s.name + '</h2>';
+  html += '<div class="meta">';
+  (s.lines || []).forEach((l) => {
+    html += '<span class="badge" style="border-color:' + (LINE_COLORS[l] || '#2a2a30') + '">' + l + '</span>';
   });
+  if (s.visited) html += '<span class="badge visited">Visited' + (s.visitedDate ? ' · ' + s.visitedDate : '') + '</span>';
+  if (s.district) html += '<span class="badge">' + s.district + '</span>';
+  html += '</div>';
+
+  // ✅ Build the scrollable gallery HTML
+  if (gal.length) {
+    html += '<div class="gallery-wrap">';
+    html += '<button class="gallery-arrow left" id="gPrev" aria-label="Scroll left">◀</button>';
+    html += '<button class="gallery-arrow right" id="gNext" aria-label="Scroll right">▶</button>';
+    html += '<div class="gallery-row" id="gRow">';
+    gal.forEach((g, idx) => {
+      const alt = (g.alt || ('Photo of ' + s.name)).replace(/"/g, '&quot;');
+      html += '<img data-idx="' + idx + '" src="' + g.src + '" alt="' + alt + '">';
+    });
+    html += '</div></div>';
+  }
+
+  const acts = s.activities || [];
+  if (acts.length) {
+    html += '<div><h3 style="margin:12px 0 6px; font-size:15px;">Activities</h3><ul>';
+    acts.forEach((a) => { html += '<li><b>' + a.title + '</b> — ' + (a.note || '') + '</li>'; });
+    html += '</ul></div>';
+  }
+
+  if (s.notes) html += '<p style="color:var(--muted)">' + s.notes + '</p>';
+
+  const tags = s.tags || [];
+  if (tags.length) {
+    html += '<div class="meta">';
+    tags.forEach((t) => { html += '<span class="badge">#' + t + '</span>'; });
+    html += '</div>';
+  }
+
+  // ✅ Inject content, then open modal
+  sheetContent.innerHTML = html;
+  modal.classList.add('open');
+  modal.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('modal-open'); /* lock bg scroll */
+
+  // ✅ NOW query the elements and wire behavior
+  if (gal.length) {
+    const gRow  = document.getElementById('gRow');
+    const gPrev = document.getElementById('gPrev');
+    const gNext = document.getElementById('gNext');
+
+    // One-image step (width + gap)
+    const firstImg = gRow.querySelector('img');
+    const gap = 8;
+    const getStep = () => (firstImg ? firstImg.clientWidth + gap : Math.max(300, gRow.clientWidth * 0.8));
+
+    gPrev.onclick = () => gRow.scrollBy({ left: -getStep(), behavior: 'smooth' });
+    gNext.onclick = () => gRow.scrollBy({ left:  getStep(), behavior: 'smooth' });
+
+    // Click → lightbox
+    gRow.querySelectorAll('img').forEach(img => {
+      img.addEventListener('click', (e) => {
+        const idx = parseInt(e.currentTarget.getAttribute('data-idx'), 10) || 0;
+        openLightbox(gal, idx, s.name);
+      });
+    });
+  }
 }
+
 
 
       const acts = s.activities || [];
@@ -463,7 +501,6 @@
           });
         });
       }
-    }
 
     // ------------------------------
     // Render
