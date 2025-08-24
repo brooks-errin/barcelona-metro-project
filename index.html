@@ -96,7 +96,11 @@
       main { grid-template-columns: 1fr; }
       aside { position: absolute; inset: auto 0 0 0; height: 40vh; }
     }
-  </style>
+      /* Modal overrides to ensure visibility */
+    .modal { z-index: 10000; }
+    .sheet { box-shadow: 0 24px 80px rgba(0,0,0,.6); animation: pop .18s ease-out; }
+    @keyframes pop { from { opacity: 0; transform: translateY(6px) scale(.98); } to { opacity: 1; transform: none; } }
+</style>
 </head>
 <body>
   <header>
@@ -165,10 +169,13 @@
     // ------------------------------
     function loadStations() {
       // Cache-bust with version param if needed
-      return fetch("stations.json?v=3")
-        .then((r) => { if (!r.ok) throw new Error("stations.json not found"); return r.json(); })
-        .then((data) => { STATION_DATA = data; });
-    }
+      const dataUrl = new URL('stations.json', window.location.href);
+      // cache-bust to avoid stale copies
+      dataUrl.searchParams.set('v', Date.now().toString());
+      return fetch(dataUrl)
+        .then((r) => { if (!r.ok) throw new Error(`stations.json not found (HTTP ${r.status})`); return r.json(); })
+        .then((data) => { STATION_DATA = data; }); return r.json(); }
+          
 
     // ------------------------------
     // UI builders (run AFTER data loads)
@@ -199,10 +206,13 @@
     // Helpers
     // ------------------------------
     function stationMatchesFilters(s) {
-      const lineOk = activeLines.size === 0 || s.lines.some((l) => activeLines.has(l));
-      if (!searchQuery) return lineOk;
+      const lineOk = activeLines.size === 0 || (Array.isArray(s.lines) && s.lines.some((l) => activeLines.has(l)));
+      const statusOk = true; // reserved for future status filter
+      if (!searchQuery) return lineOk && statusOk;
+      // Guard: if fuse not ready yet, treat as no search results
+      if (!fuse) return false;
       const results = new Set(fuse.search(searchQuery).map((r) => r.item.slug));
-      return lineOk && results.has(s.slug);
+      return lineOk && statusOk && results.has(s.slug);
     }
 
     function markerForStation(s) {
@@ -217,32 +227,54 @@
     }
 
     function openStation(s) {
-      const gallery = (s.gallery || []).slice(0, 3);
-      sheetContent.innerHTML = `
-        <h2 style="margin:6px 0 4px">${s.name}</h2>
-        <div class="meta">
-          ${(s.lines||[]).map((l) => `<span class="badge" style="border-color:${LINE_COLORS[l]||'#2a2a30'}">${l}</span>`).join("")}
-          ${s.visited ? `<span class="badge visited">Visited ${s.visitedDate ? "· " + s.visitedDate : ""}</span>` : ""}
-          ${s.district ? `<span class="badge">${s.district}</span>` : ""}
-        </div>
-        ${gallery.length ? `
-          <div class="gallery">
-            ${gallery.slice(0,1).map((src) => `<img src="${src}" alt="Photo of ${s.name}">`).join("")}
-            ${gallery.slice(1).map((src) => `<img src="${src}" alt="Photo of ${s.name}">`).join("")}
-          </div>` : ``}
-        ${(s.activities||[]).length ? `
-          <div>
-            <h3 style="margin:12px 0 6px; font-size:15px;">Activities</h3>
-            <ul>
-              ${(s.activities||[]).map((a) => `<li><b>${a.title}</b> — ${a.note||""}</li>`).join("")}
-            </ul>
-          </div>` : ``}
-        ${s.notes ? `<p style="color:var(--muted)">${s.notes}</p>` : ``}
-        ${(s.tags||[]).length ? `<div class="meta">${s.tags.map((t) => `<span class="badge">#${t}</span>`).join("")}</div>` : ""}
-      `;
-      modal.classList.add("open");
-      modal.setAttribute("aria-hidden", "false");
+  const gallery = (s.gallery || []).slice(0, 3);
+
+  let html = '';
+  html += '<h2 style="margin:6px 0 4px">' + s.name + '</h2>';
+  html += '<div class="meta">';
+  (s.lines || []).forEach((l) => {
+    html += '<span class="badge" style="border-color:' + (LINE_COLORS[l] || '#2a2a30') + '">' + l + '</span>';
+  });
+  if (s.visited) {
+    html += '<span class="badge visited">Visited' + (s.visitedDate ? ' · ' + s.visitedDate : '') + '</span>';
+  }
+  if (s.district) {
+    html += '<span class="badge">' + s.district + '</span>';
+  }
+  html += '</div>';
+
+  if (gallery.length) {
+    html += '<div class="gallery">';
+    html += '<img src="' + gallery[0] + '" alt="Photo of ' + s.name + '">';
+    for (let i = 1; i < gallery.length; i++) {
+      html += '<img src="' + gallery[i] + '" alt="Photo of ' + s.name + '">';
     }
+    html += '</div>';
+  }
+
+  const acts = s.activities || [];
+  if (acts.length) {
+    html += '<div><h3 style="margin:12px 0 6px; font-size:15px;">Activities</h3><ul>';
+    acts.forEach((a) => {
+      html += '<li><b>' + a.title + '</b> — ' + (a.note || '') + '</li>';
+    });
+    html += '</ul></div>';
+  }
+
+  if (s.notes) html += '<p style="color:var(--muted)">' + s.notes + '</p>';
+
+  const tags = s.tags || [];
+  if (tags.length) {
+    html += '<div class="meta">';
+    tags.forEach((t) => { html += '<span class="badge">#' + t + '</span>'; });
+    html += '</div>';
+  }
+
+  sheetContent.innerHTML = html;
+  modal.classList.add('open');
+  modal.setAttribute('aria-hidden', 'false');
+}
+
 
     // ------------------------------
     // Render
@@ -267,18 +299,31 @@
 
         const card = document.createElement("div");
         card.className = "card";
-        card.innerHTML = `
-          <div style="display:flex; align-items:center; justify-content:space-between;">
-            <div style="font-weight:600">${s.name}</div>
-            <div class="meta">${(s.lines||[]).map((l) => `<span class="badge" style="border-color:${LINE_COLORS[l]||'#2a2a30'}">${l}</span>`).join("")}</div>
-          </div>
-          ${(s.gallery||[]).length ? `<div class="thumbs">${s.gallery.slice(0,3).map((src) => `<img src="${src}" alt="Thumbnail of ${s.name}">`).join("")}</div>` : ``}
-          <div class="meta">
-            ${s.visited ? `<span class="badge visited">Visited</span>` : `<span class="badge">Planned</span>`}
-            ${s.district ? `<span class="badge">${s.district}</span>` : ""}
-            ${(s.tags||[]).slice(0,3).map((t) => `<span class="badge">#${t}</span>`).join("")}
-          </div>
-        `;
+        const linesHtml   = (s.lines || []).map((l) =>
+  '<span class="badge" style="border-color:' + (LINE_COLORS[l] || '#2a2a30') + '">' + l + '</span>'
+).join('');
+
+const thumbsHtml  = (s.gallery || []).slice(0, 3).map((src) =>
+  '<img src="' + src + '" alt="Thumbnail of ' + s.name + '">'
+).join('');
+
+const tagsHtml    = (s.tags || []).slice(0, 3).map((t) =>
+  '<span class="badge">#' + t + '</span>'
+).join('');
+
+card.innerHTML = `
+  <div style="display:flex; align-items:center; justify-content:space-between;">
+    <div style="font-weight:600">${s.name}</div>
+    <div class="meta">${linesHtml}</div>
+  </div>
+  ${thumbsHtml ? '<div class="thumbs">' + thumbsHtml + '</div>' : ''}
+  <div class="meta">
+    ${s.visited ? '<span class="badge visited">Visited</span>' : '<span class="badge">Planned</span>'}
+    ${s.district ? '<span class="badge">' + s.district + '</span>' : ''}
+    ${tagsHtml}
+  </div>
+`;
+
         card.onclick = () => { openStation(s); map.setView(s.coords, 15); };
         listEl.appendChild(card);
       });
@@ -294,6 +339,12 @@
     // App bootstrap
     // ------------------------------
     function init() {
+      if (!Array.isArray(STATION_DATA)) {
+        console.error("STATION_DATA is not an array", STATION_DATA);
+        progressEl.textContent = "Error: bad data format";
+        listEl.innerHTML = "<p style='padding:12px;color:#bbb'>Data format error.</p>";
+        return;
+      }
       buildLineChips();
       setupSearch();
       render();
