@@ -15,6 +15,11 @@
     "tags": ["park","nature","viewpoint"],
     "mood": "relaxed",
     "rating": 5,
-    "gallery": ["photos/mundet-1.jpg","photos/mundet-2.jpg"]
+    "gallery": ["photos/mundet-1.jpg","photos/mundet-2.jpg","photos/mundet-3.jpg","photos/mundet-4.jpg","photos/mundet-5.jpg","photos/mundet-6.jpg",
+                "photos/mundet-7.jpg","photos/mundet-8.jpg","photos/mundet-9.jpg","photos/mundet-10.jpg","photos/mundet-11.jpg","photos/mundet-12.jpg",
+                "photos/mundet-13.jpg","photos/mundet-14.jpg","photos/mundet-15.jpg","photos/mundet-16.jpg","photos/mundet-17.jpg","photos/mundet-18.jpg",
+                "photos/mundet-19.jpg","photos/mundet-20.jpg","photos/mundet-21.jpg","photos/mundet-22.jpg","photos/mundet-23.jpg","photos/mundet-24.jpg",
+                "photos/mundet-25.jpg","photos/mundet-26.jpg","photos/mundet-27.jpg","photos/mundet-28.jpg","photos/mundet-29.jpg","photos/mundet-30.jpg",
+                "photos/mundet-31.jpg","photos/mundet-32.jpg","photos/mundet-33.jpg"]
   }
 ]
