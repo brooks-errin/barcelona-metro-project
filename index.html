@@ -142,6 +142,58 @@
       main { grid-template-columns: 1fr; }
       aside { position: absolute; inset: auto 0 0 0; height: 40vh; }
     }
+    /* Keep the sheet from getting a horizontal scrollbar */
+.sheet { overflow-x: hidden; }
+
+/* Station detail gallery (scrollable row + arrows, no visible scrollbar) */
+.sheet .gallery-wrap { position: relative; overflow: hidden; }
+.sheet .gallery-row {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;           /* horizontal scroll inside the row only */
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  padding-bottom: 4px;
+  scroll-snap-type: x mandatory;      /* snap nicely */
+  -ms-overflow-style: none;           /* hide scrollbar (IE/Edge) */
+  scrollbar-width: none;              /* hide scrollbar (Firefox) */
+}
+.sheet .gallery-row::-webkit-scrollbar { display: none; } /* hide scrollbar (WebKit) */
+
+.sheet .gallery-row img {
+  height: 220px; width: auto; border-radius: 12px;
+  flex: 0 0 auto; cursor: pointer;
+  scroll-snap-align: start;
+}
+
+/* Arrows sit INSIDE the gallery; no negative offsets (prevents bottom scrollbar) */
+.gallery-arrow {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  background: #202028; border: 1px solid #2a2a30; color: var(--fg);
+  border-radius: 999px; padding: 8px 10px; cursor: pointer; z-index: 2;
+  box-shadow: 0 4px 16px rgba(0,0,0,.25);
+}
+.gallery-arrow.left  { left: 6px; }
+.gallery-arrow.right { right: 6px; }
+
+/* Optional: soft edge fades to hint there’s more */
+.sheet .gallery-wrap::before,
+.sheet .gallery-wrap::after {
+  content: "";
+  position: absolute; top: 0; bottom: 0; width: 24px; pointer-events: none;
+}
+.sheet .gallery-wrap::before { left: 0;  background: linear-gradient(90deg, rgba(15,15,18,1), rgba(15,15,18,0)); }
+.sheet .gallery-wrap::after  { right: 0; background: linear-gradient(270deg, rgba(15,15,18,1), rgba(15,15,18,0)); }
+
+.sheet .gallery-wrap::before,
+.sheet .gallery-wrap::after {
+  content: "";
+  position: absolute; top: 0; bottom: 0; width: 24px; pointer-events: none;
+}
+.sheet .gallery-wrap::before { left: 0;  background: linear-gradient(90deg, rgba(15,15,18,1), rgba(15,15,18,0)); }
+.sheet .gallery-wrap::after  { right: 0; background: linear-gradient(270deg, rgba(15,15,18,1), rgba(15,15,18,0)); }
+
+
   </style>
 </head>
 <body>
@@ -351,16 +403,27 @@
       html += '</div>';
 
       if (gal.length) {
-        html += '<div class="gallery-wrap">';
-        html += '<button class="gallery-arrow left" id="gPrev" aria-label="Scroll left">◀</button>';
-        html += '<button class="gallery-arrow right" id="gNext" aria-label="Scroll right">▶</button>';
-        html += '<div class="gallery-row" id="gRow">';
-        gal.forEach((g, idx) => {
-          const alt = g.alt || ('Photo of ' + s.name);
-          html += '<img data-idx="' + idx + '" src="' + g.src + '" alt="' + alt.replace(/"/g, '&quot;') + '">';
-        });
-        html += '</div></div>';
-      }
+  const gRow  = document.getElementById('gRow');
+  const gPrev = document.getElementById('gPrev');
+  const gNext = document.getElementById('gNext');
+
+  // Calculate a step ~ one image width + gap
+  const firstImg = gRow.querySelector('img');
+  const gap = 8;
+  const getStep = () => (firstImg ? firstImg.clientWidth + gap : Math.max(300, gRow.clientWidth * 0.8));
+
+  gPrev.onclick = () => gRow.scrollBy({ left: -getStep(), behavior: 'smooth' });
+  gNext.onclick = () => gRow.scrollBy({ left:  getStep(), behavior: 'smooth' });
+
+  // clicking an image still opens the lightbox
+  gRow.querySelectorAll('img').forEach(img => {
+    img.addEventListener('click', (e) => {
+      const idx = parseInt(e.currentTarget.getAttribute('data-idx'), 10) || 0;
+      openLightbox(gal, idx, s.name);
+    });
+  });
+}
+
 
       const acts = s.activities || [];
       if (acts.length) {
