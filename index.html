@@ -45,54 +45,24 @@
       background: #0f0f12cc; backdrop-filter: blur(4px);
     }
     .controls { padding: 14px; display: grid; gap: 12px; border-bottom: 1px solid #232327; }
-    .search {
-      display: flex; gap: 8px; align-items: center;
-      background: var(--card); border-radius: var(--radius); padding: 10px 12px;
-    }
-    .search input {
-      background: transparent; border: 0; outline: 0; color: var(--fg); width: 100%;
-    }
+    .search { display: flex; gap: 8px; align-items: center; background: var(--card); border-radius: var(--radius); padding: 10px 12px; }
+    .search input { background: transparent; border: 0; outline: 0; color: var(--fg); width: 100%; }
     .chips { display: flex; flex-wrap: wrap; gap: 8px; }
-    .chip {
-      font-size: 12px; padding: 6px 10px; border-radius: 999px;
-      border: 1px solid #2a2a30; cursor: pointer; user-select: none;
-    }
+    .chip { font-size: 12px; padding: 6px 10px; border-radius: 999px; border: 1px solid #2a2a30; cursor: pointer; user-select: none; }
     .chip.active { border-color: var(--accent); color: var(--accent); }
     .list { overflow: auto; padding: 10px 10px 18px; }
-    .card {
-      background: var(--card); border: 1px solid #232327; border-radius: var(--radius);
-      padding: 12px; margin: 10px; display: grid; gap: 8px; cursor: pointer;
-    }
+    .card { background: var(--card); border: 1px solid #232327; border-radius: var(--radius); padding: 12px; margin: 10px; display: grid; gap: 8px; cursor: pointer; }
     .meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-    .badge {
-      font-size: 11px; padding: 4px 8px; border-radius: 999px; background: #202028; border: 1px solid #2a2a30;
-    }
+    .badge { font-size: 11px; padding: 4px 8px; border-radius: 999px; background: #202028; border: 1px solid #2a2a30; }
     .visited { color: #69db7c; border-color: #2f5d3a; background: #18311f; }
     .thumbs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
     .thumbs img { width: 100%; height: 84px; object-fit: cover; border-radius: 10px; }
 
     /* Station detail modal */
-    .modal {
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,0.85); /* darker backdrop */
-      display: none; align-items: center; justify-content: center; padding: 20px;
-      z-index: 100000; /* above Leaflet panes */
-    }
+    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 100000; }
     .modal.open { display: flex; }
-    .sheet {
-      width: min(920px, 100%); max-height: 85vh; overflow: auto;
-      background: var(--card); border: 1px solid #232327; border-radius: 20px; padding: 18px;
-      display: grid; gap: 14px;
-      box-shadow: 0 24px 80px rgba(0,0,0,.65);
-      position: relative; z-index: 100001;
-      animation: pop .18s ease-out;
-    }
-    .sheet .gallery { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px; }
-    .sheet .gallery img { width: 100%; height: 220px; object-fit: cover; border-radius: 12px; }
-    .close {
-      position: sticky; top: 0; margin-left: auto; background: #202028; border: 1px solid #2a2a30;
-      color: var(--fg); padding: 6px 10px; border-radius: 999px; cursor: pointer;
-    }
+    .sheet { width: min(920px, 100%); max-height: 85vh; overflow: auto; background: var(--card); border: 1px solid #232327; border-radius: 20px; padding: 18px; display: grid; gap: 14px; box-shadow: 0 24px 80px rgba(0,0,0,.65); position: relative; z-index: 100001; animation: pop .18s ease-out; }
+    .close { position: sticky; top: 0; margin-left: auto; background: #202028; border: 1px solid #2a2a30; color: var(--fg); padding: 6px 10px; border-radius: 999px; cursor: pointer; }
     @keyframes pop { from { opacity: 0; transform: translateY(6px) scale(.98); } to { opacity: 1; transform: none; } }
 
     /* Leaflet tweak & stacking reset under modal */
@@ -104,36 +74,26 @@
     /* Lock background when any modal is open */
     body.modal-open { overflow: hidden; }
 
-    /* Station detail gallery (scrollable row + arrows) */
-    .sheet .gallery-wrap { position: relative; }
-    .sheet .gallery-row {
-      display: flex; gap: 8px; overflow-x: auto; scroll-behavior: smooth; padding-bottom: 4px;
-    }
-    .sheet .gallery-row img {
-      height: 220px; width: auto; border-radius: 12px; flex: 0 0 auto; cursor: pointer;
-    }
-    .gallery-arrow {
-      position: absolute; top: 50%; transform: translateY(-50%);
-      background: #202028; border: 1px solid #2a2a30; color: var(--fg);
-      border-radius: 999px; padding: 8px 10px; cursor: pointer; z-index: 2;
-    }
-    .gallery-arrow.left  { left: -6px; }
-    .gallery-arrow.right { right: -6px; }
+    /* Station detail gallery (scrollable row + arrows, no visible scrollbar) */
+    .sheet { overflow-x: hidden; }
+    .sheet .gallery-wrap { position: relative; overflow: hidden; }
+    .sheet .gallery-row { display: flex; gap: 8px; overflow-x: auto; overflow-y: hidden; scroll-behavior: smooth; padding-bottom: 4px; scroll-snap-type: x mandatory; -ms-overflow-style: none; scrollbar-width: none; }
+    .sheet .gallery-row::-webkit-scrollbar { display: none; }
+    .sheet .gallery-row img { height: 220px; width: auto; border-radius: 12px; flex: 0 0 auto; cursor: pointer; scroll-snap-align: start; }
+    .gallery-arrow { position: absolute; top: 50%; transform: translateY(-50%); background: #202028; border: 1px solid #2a2a30; color: var(--fg); border-radius: 999px; padding: 8px 10px; cursor: pointer; z-index: 2; box-shadow: 0 4px 16px rgba(0,0,0,.25); }
+    .gallery-arrow.left  { left: 6px; }
+    .gallery-arrow.right { right: 6px; }
+    .sheet .gallery-wrap::before, .sheet .gallery-wrap::after { content: ""; position: absolute; top: 0; bottom: 0; width: 24px; pointer-events: none; }
+    .sheet .gallery-wrap::before { left: 0;  background: linear-gradient(90deg, rgba(15,15,18,1), rgba(15,15,18,0)); }
+    .sheet .gallery-wrap::after  { right: 0; background: linear-gradient(270deg, rgba(15,15,18,1), rgba(15,15,18,0)); }
 
     /* Fullscreen lightbox */
-    .lightbox {
-      position: fixed; inset: 0; background: rgba(0,0,0,.92);
-      display: none; align-items: center; justify-content: center; z-index: 100002;
-    }
+    .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,.92); display: none; align-items: center; justify-content: center; z-index: 100002; }
     .lightbox.open { display: flex; }
     .lightbox-inner { max-width: min(92vw, 1200px); max-height: 90vh; display: grid; gap: 12px; }
     .lightbox img { max-width: 100%; max-height: 70vh; border-radius: 12px; }
     .lightbox .caption { color: var(--fg); text-align: center; font-size: 14px; opacity: .9; }
-    .lightbox .lb-btn {
-      position: absolute; top: 50%; transform: translateY(-50%);
-      background: #202028; border: 1px solid #2a2a30; color: var(--fg);
-      border-radius: 999px; padding: 10px 12px; cursor: pointer; z-index: 100003;
-    }
+    .lightbox .lb-btn { position: absolute; top: 50%; transform: translateY(-50%); background: #202028; border: 1px solid #2a2a30; color: var(--fg); border-radius: 999px; padding: 10px 12px; cursor: pointer; z-index: 100003; }
     .lightbox .lb-prev { left: 24px; }
     .lightbox .lb-next { right: 24px; }
     .lightbox .lb-close { position: absolute; top: 18px; right: 18px; }
@@ -142,58 +102,6 @@
       main { grid-template-columns: 1fr; }
       aside { position: absolute; inset: auto 0 0 0; height: 40vh; }
     }
-    /* Keep the sheet from getting a horizontal scrollbar */
-.sheet { overflow-x: hidden; }
-
-/* Station detail gallery (scrollable row + arrows, no visible scrollbar) */
-.sheet .gallery-wrap { position: relative; overflow: hidden; }
-.sheet .gallery-row {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;           /* horizontal scroll inside the row only */
-  overflow-y: hidden;
-  scroll-behavior: smooth;
-  padding-bottom: 4px;
-  scroll-snap-type: x mandatory;      /* snap nicely */
-  -ms-overflow-style: none;           /* hide scrollbar (IE/Edge) */
-  scrollbar-width: none;              /* hide scrollbar (Firefox) */
-}
-.sheet .gallery-row::-webkit-scrollbar { display: none; } /* hide scrollbar (WebKit) */
-
-.sheet .gallery-row img {
-  height: 220px; width: auto; border-radius: 12px;
-  flex: 0 0 auto; cursor: pointer;
-  scroll-snap-align: start;
-}
-
-/* Arrows sit INSIDE the gallery; no negative offsets (prevents bottom scrollbar) */
-.gallery-arrow {
-  position: absolute; top: 50%; transform: translateY(-50%);
-  background: #202028; border: 1px solid #2a2a30; color: var(--fg);
-  border-radius: 999px; padding: 8px 10px; cursor: pointer; z-index: 2;
-  box-shadow: 0 4px 16px rgba(0,0,0,.25);
-}
-.gallery-arrow.left  { left: 6px; }
-.gallery-arrow.right { right: 6px; }
-
-/* Optional: soft edge fades to hint there’s more */
-.sheet .gallery-wrap::before,
-.sheet .gallery-wrap::after {
-  content: "";
-  position: absolute; top: 0; bottom: 0; width: 24px; pointer-events: none;
-}
-.sheet .gallery-wrap::before { left: 0;  background: linear-gradient(90deg, rgba(15,15,18,1), rgba(15,15,18,0)); }
-.sheet .gallery-wrap::after  { right: 0; background: linear-gradient(270deg, rgba(15,15,18,1), rgba(15,15,18,0)); }
-
-.sheet .gallery-wrap::before,
-.sheet .gallery-wrap::after {
-  content: "";
-  position: absolute; top: 0; bottom: 0; width: 24px; pointer-events: none;
-}
-.sheet .gallery-wrap::before { left: 0;  background: linear-gradient(90deg, rgba(15,15,18,1), rgba(15,15,18,0)); }
-.sheet .gallery-wrap::after  { right: 0; background: linear-gradient(270deg, rgba(15,15,18,1), rgba(15,15,18,0)); }
-
-
   </style>
 </head>
 <body>
@@ -265,9 +173,7 @@
 
     // Map
     const map = L.map("map", { zoomControl: true }).setView([41.387, 2.17], 12);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "&copy; OpenStreetMap"
-    }).addTo(map);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "&copy; OpenStreetMap" }).addTo(map);
 
     const markers = [];
     const activeLines = new Set(); // empty = all
@@ -325,10 +231,7 @@
       const dataUrl = new URL('stations.json', window.location.href);
       dataUrl.searchParams.set('v', Date.now().toString()); // cache-bust
       return fetch(dataUrl)
-        .then((r) => {
-          if (!r.ok) throw new Error(`stations.json not found (HTTP ${r.status})`);
-          return r.json();
-        })
+        .then((r) => { if (!r.ok) throw new Error(`stations.json not found (HTTP ${r.status})`); return r.json(); })
         .then((data) => { STATION_DATA = data; });
     }
 
@@ -343,11 +246,7 @@
         chip.className = "chip";
         chip.textContent = line;
         chip.style.borderColor = LINE_COLORS[line] || "#2a2a30";
-        chip.onclick = () => {
-          if (activeLines.has(line)) activeLines.delete(line); else activeLines.add(line);
-          chip.classList.toggle("active");
-          render();
-        };
+        chip.onclick = () => { if (activeLines.has(line)) activeLines.delete(line); else activeLines.add(line); chip.classList.toggle("active"); render(); };
         chipsEl.appendChild(chip);
       });
     }
@@ -362,10 +261,7 @@
     // ------------------------------
     function normalizeGallery(g) {
       // Supports ["a.jpg","b.jpg"] OR [{src:"a.jpg", caption:"..."}]
-      return (g || []).map(item => {
-        if (typeof item === 'string') return { src: item, caption: '', alt: '' };
-        return { src: item.src, caption: item.caption || '', alt: item.alt || '' };
-      }).filter(x => x && x.src);
+      return (g || []).map(item => { if (typeof item === 'string') return { src: item, caption: '', alt: '' }; return { src: item.src, caption: item.caption || '', alt: item.alt || '' }; }).filter(x => x && x.src);
     }
 
     function stationMatchesFilters(s) {
@@ -380,88 +276,32 @@
     function markerForStation(s) {
       const primaryLine = (Array.isArray(s.lines) && s.lines.length) ? s.lines[0] : null;
       const color = primaryLine ? (LINE_COLORS[primaryLine] || "#888") : "#888";
-      const icon = L.divIcon({
-        html: '<div style="background:' + color + '; width:12px; height:12px; border-radius:50%; outline: 2px solid #fff; box-shadow:0 0 0 2px rgba(0,0,0,.4);"></div>',
-        className: "", iconSize: [12, 12]
-      });
+      const icon = L.divIcon({ html: '<div style="background:' + color + '; width:12px; height:12px; border-radius:50%; outline: 2px solid #fff; box-shadow:0 0 0 2px rgba(0,0,0,.4);"></div>', className: "", iconSize: [12, 12] });
       const m = L.marker(s.coords, { icon }).addTo(map).bindPopup('<b>' + s.name + '</b><br>' + (s.lines||[]).join(' · '));
       m.on("click", () => openStation(s));
       return m;
     }
 
     function openStation(s) {
-  const gal = normalizeGallery(s.gallery);
+      const gal = normalizeGallery(s.gallery);
 
-  let html = '';
-  html += '<h2 style="margin:6px 0 4px">' + s.name + '</h2>';
-  html += '<div class="meta">';
-  (s.lines || []).forEach((l) => {
-    html += '<span class="badge" style="border-color:' + (LINE_COLORS[l] || '#2a2a30') + '">' + l + '</span>';
-  });
-  if (s.visited) html += '<span class="badge visited">Visited' + (s.visitedDate ? ' · ' + s.visitedDate : '') + '</span>';
-  if (s.district) html += '<span class="badge">' + s.district + '</span>';
-  html += '</div>';
+      let html = '';
+      html += '<h2 style="margin:6px 0 4px">' + s.name + '</h2>';
+      html += '<div class="meta">';
+      (s.lines || []).forEach((l) => { html += '<span class="badge" style="border-color:' + (LINE_COLORS[l] || '#2a2a30') + '">' + l + '</span>'; });
+      if (s.visited) html += '<span class="badge visited">Visited' + (s.visitedDate ? ' · ' + s.visitedDate : '') + '</span>';
+      if (s.district) html += '<span class="badge">' + s.district + '</span>';
+      html += '</div>';
 
-  // ✅ Build the scrollable gallery HTML
-  if (gal.length) {
-    html += '<div class="gallery-wrap">';
-    html += '<button class="gallery-arrow left" id="gPrev" aria-label="Scroll left">◀</button>';
-    html += '<button class="gallery-arrow right" id="gNext" aria-label="Scroll right">▶</button>';
-    html += '<div class="gallery-row" id="gRow">';
-    gal.forEach((g, idx) => {
-      const alt = (g.alt || ('Photo of ' + s.name)).replace(/"/g, '&quot;');
-      html += '<img data-idx="' + idx + '" src="' + g.src + '" alt="' + alt + '">';
-    });
-    html += '</div></div>';
-  }
-
-  const acts = s.activities || [];
-  if (acts.length) {
-    html += '<div><h3 style="margin:12px 0 6px; font-size:15px;">Activities</h3><ul>';
-    acts.forEach((a) => { html += '<li><b>' + a.title + '</b> — ' + (a.note || '') + '</li>'; });
-    html += '</ul></div>';
-  }
-
-  if (s.notes) html += '<p style="color:var(--muted)">' + s.notes + '</p>';
-
-  const tags = s.tags || [];
-  if (tags.length) {
-    html += '<div class="meta">';
-    tags.forEach((t) => { html += '<span class="badge">#' + t + '</span>'; });
-    html += '</div>';
-  }
-
-  // ✅ Inject content, then open modal
-  sheetContent.innerHTML = html;
-  modal.classList.add('open');
-  modal.setAttribute('aria-hidden', 'false');
-  document.body.classList.add('modal-open'); /* lock bg scroll */
-
-  // ✅ NOW query the elements and wire behavior
-  if (gal.length) {
-    const gRow  = document.getElementById('gRow');
-    const gPrev = document.getElementById('gPrev');
-    const gNext = document.getElementById('gNext');
-
-    // One-image step (width + gap)
-    const firstImg = gRow.querySelector('img');
-    const gap = 8;
-    const getStep = () => (firstImg ? firstImg.clientWidth + gap : Math.max(300, gRow.clientWidth * 0.8));
-
-    gPrev.onclick = () => gRow.scrollBy({ left: -getStep(), behavior: 'smooth' });
-    gNext.onclick = () => gRow.scrollBy({ left:  getStep(), behavior: 'smooth' });
-
-    // Click → lightbox
-    gRow.querySelectorAll('img').forEach(img => {
-      img.addEventListener('click', (e) => {
-        const idx = parseInt(e.currentTarget.getAttribute('data-idx'), 10) || 0;
-        openLightbox(gal, idx, s.name);
-      });
-    });
-  }
-}
-
-
+      if (gal.length) {
+        html += '<div class="gallery-wrap">';
+        html += '  <button class="gallery-arrow left" id="gPrev" aria-label="Scroll left">◀</button>';
+        html += '  <button class="gallery-arrow right" id="gNext" aria-label="Scroll right">▶</button>';
+        html += '  <div class="gallery-row" id="gRow">';
+        gal.forEach((g, idx) => { const alt = (g.alt || ('Photo of ' + s.name)).replace(/"/g, '&quot;'); html += '    <img data-idx="' + idx + '" src="' + g.src + '" alt="' + alt + '">'; });
+        html += '  </div>';
+        html += '</div>';
+      }
 
       const acts = s.activities || [];
       if (acts.length) {
@@ -473,34 +313,27 @@
       if (s.notes) html += '<p style="color:var(--muted)">' + s.notes + '</p>';
 
       const tags = s.tags || [];
-      if (tags.length) {
-        html += '<div class="meta">';
-        tags.forEach((t) => { html += '<span class="badge">#' + t + '</span>'; });
-        html += '</div>';
-      }
+      if (tags.length) { html += '<div class="meta">'; tags.forEach((t) => { html += '<span class="badge">#' + t + '</span>'; }); html += '</div>'; }
 
+      // Inject and open modal
       sheetContent.innerHTML = html;
       modal.classList.add('open');
       modal.setAttribute('aria-hidden', 'false');
-      document.body.classList.add('modal-open'); /* lock bg scroll */
+      document.body.classList.add('modal-open');
 
-      // Wire gallery controls & thumbnails
+      // Wire gallery after inject
       if (gal.length) {
         const gRow  = document.getElementById('gRow');
         const gPrev = document.getElementById('gPrev');
         const gNext = document.getElementById('gNext');
-        const step = () => Math.max(300, gRow.clientWidth * 0.8);
-
-        gPrev.onclick = () => gRow.scrollBy({ left: -step(), behavior: 'smooth' });
-        gNext.onclick = () => gRow.scrollBy({ left:  step(), behavior: 'smooth' });
-
-        gRow.querySelectorAll('img').forEach(img => {
-          img.addEventListener('click', (e) => {
-            const idx = parseInt(e.currentTarget.getAttribute('data-idx'), 10) || 0;
-            openLightbox(gal, idx, s.name);
-          });
-        });
+        const firstImg = gRow.querySelector('img');
+        const gap = 8;
+        const getStep = () => (firstImg ? firstImg.clientWidth + gap : Math.max(300, gRow.clientWidth * 0.8));
+        gPrev.onclick = () => gRow.scrollBy({ left: -getStep(), behavior: 'smooth' });
+        gNext.onclick = () => gRow.scrollBy({ left:  getStep(), behavior: 'smooth' });
+        gRow.querySelectorAll('img').forEach(img => { img.addEventListener('click', (e) => { const idx = parseInt(e.currentTarget.getAttribute('data-idx'), 10) || 0; openLightbox(gal, idx, s.name); }); });
       }
+    }
 
     // ------------------------------
     // Render
@@ -521,17 +354,9 @@
 
         const card = document.createElement("div");
         card.className = "card";
-        const linesHtml = (s.lines || []).map((l) =>
-          '<span class="badge" style="border-color:' + (LINE_COLORS[l] || '#2a2a30') + '">' + l + '</span>'
-        ).join('');
-
-        const thumbsHtml = (s.gallery || []).slice(0, 3).map((src) =>
-          '<img src="' + (typeof src === 'string' ? src : src.src) + '" alt="Thumbnail of ' + s.name + '">'
-        ).join('');
-
-        const tagsHtml = (s.tags || []).slice(0, 3).map((t) =>
-          '<span class="badge">#' + t + '</span>'
-        ).join('');
+        const linesHtml = (s.lines || []).map((l) => '<span class="badge" style="border-color:' + (LINE_COLORS[l] || '#2a2a30') + '">' + l + '</span>').join('');
+        const thumbsHtml = (s.gallery || []).slice(0, 3).map((src) => '<img src="' + (typeof src === 'string' ? src : src.src) + '" alt="Thumbnail of ' + s.name + '">').join('');
+        const tagsHtml = (s.tags || []).slice(0, 3).map((t) => '<span class="badge">#' + t + '</span>').join('');
 
         card.innerHTML = `
           <div style="display:flex; align-items:center; justify-content:space-between;">
