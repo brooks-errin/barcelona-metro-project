@@ -91,7 +91,7 @@
 "lines": ["L4"],
 "district": "Ciutat Vella",
 "coords": [41.3839, 2.1791],
-"visited": true,
+"visited": false,
 "visitedDate": "2025-08-20",
 "activities": [
 {"title": "Gothic Quarter", "note": "Short photo walk."},
