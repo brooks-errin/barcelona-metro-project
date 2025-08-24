@@ -125,32 +125,19 @@
     </div>
   </div>
 
-  <!-- Minimal sample data; replace with stations.json fetch later -->
-  <script>
-  const STATION_DATA = [
-    {
-      name: "Arc de Triomf", slug: "arc-de-triomf", lines: ["L1"], district: "Eixample",
-      coords: [41.3910, 2.1800], visited: true, visitedDate: "2025-08-10",
-      activities: [
-        {title: "Coffee", note: "Espresso & croissant"},
-        {title: "Walk", note: "Passeig Lluís Companys"},
-        {title: "Sketch", note: "Quick pencil of the arch"}
-      ],
-      tags: ["coffee","walk","architecture"], mood: "curious", rating: 4,
-      gallery: ["photos/arc-1.jpg","photos/arc-2.jpg","photos/arc-3.jpg"],
-      notes: "Red brick arch, buskers, warm sunset light."
-    },
-    {
-      name: "Sagrada Família", slug: "sagrada-familia", lines: ["L2","L5"], district: "Eixample",
-      coords: [41.4036, 2.1744], visited: false, tags: ["iconic","architecture"], mood: null, rating: null,
-      activities: [], gallery: ["photos/sf-1.jpg","photos/sf-2.jpg","photos/sf-3.jpg"], notes: ""
-    },
-    {
-      name: "La Sagrera", slug: "la-sagrera", lines: ["L1","L5","L9N","L10N"], district: "Sant Andreu",
-      coords: [41.4227, 2.1899], visited: false, tags: ["interchange"], activities: [], gallery: [], notes: ""
-    }
-  ];
-  </script>
+  <!-- Fetches station data from stations.json -->
+ <script>
+let STATION_DATA = [];
+
+// Load data from stations.json
+fetch("stations.json")
+  .then(response => response.json())
+  .then(data => {
+    STATION_DATA = data;
+    render(); // call your render function once data is loaded
+  });
+</script>
+
 
   <script>
     // Line colors (tweak as you like)

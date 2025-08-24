@@ -1,0 +1,20 @@
+[
+  {
+    "name": "Mundet",
+    "slug": "mundet",
+    "lines": ["L3"],
+    "district": "Horta-Guinardó",
+    "coords": [41.4372, 2.1517],
+    "visited": true,
+    "visitedDate": "2025-08-24",
+    "activities": [
+      {"title": "Parc del Laberint d'Horta", "note": "Walk through the historic maze garden nearby."},
+      {"title": "Picnic", "note": "Relax with snacks under the trees around the university campus."},
+      {"title": "Viewpoint", "note": "Enjoy hillside views looking back toward the city."}
+    ],
+    "tags": ["park","nature","viewpoint"],
+    "mood": "relaxed",
+    "rating": 5,
+    "gallery": ["photos/mundet-1.jpg","photos/mundet-2.jpg"]
+  }
+]
