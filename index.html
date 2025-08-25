@@ -139,6 +139,29 @@
 .sheet .gallery-wrap::before,
 .sheet .gallery-wrap::after { z-index: 2; }
 
+/* --- Gallery arrow overlay fix --- */
+.sheet .gallery-wrap { position: relative; }
+.sheet .gallery-row { position: relative; z-index: 1; padding: 0 56px; } /* room for arrows */
+.sheet .gallery-wrap::before,
+.sheet .gallery-wrap::after { z-index: 2; } /* fades under overlay */
+
+.sheet .gallery-overlay {
+  position: absolute; inset: 0;
+  z-index: 6;                  /* above images & fades */
+  pointer-events: none;        /* overlay itself doesn't eat clicks */
+}
+
+/* actual buttons DO receive clicks */
+.sheet .gallery-overlay .gallery-arrow {
+  pointer-events: auto;
+  position: absolute; top: 50%; transform: translateY(-50%);
+  width: 40px; height: 40px; display: grid; place-items: center;
+  background: #202028; border: 1px solid #2a2a30; color: var(--fg);
+  border-radius: 999px; box-shadow: 0 6px 18px rgba(0,0,0,.35);
+  z-index: 7; /* over everything in overlay */
+}
+.sheet .gallery-overlay .gallery-arrow.left  { left: 8px; }
+.sheet .gallery-overlay .gallery-arrow.right { right: 8px; }
 
 
   </style>
@@ -387,7 +410,7 @@ function openStation(s) {
   if (s.district) html += '<span class="badge">' + s.district + '</span>';
   html += '</div>';
 
-  // Always include a mount for the gallery (works for local OR fallback)
+  // Always include a mount for the gallery
   html += '<div id="galleryMount"></div>';
 
   const acts = s.activities || [];
@@ -415,21 +438,9 @@ function openStation(s) {
   const mount = document.getElementById('galleryMount');
 
   if (gal.length) {
-    // Local images gallery (with arrows)
+    // Local images gallery (overlayed arrows)
     const wrap  = document.createElement('div');
     wrap.className = 'gallery-wrap';
-
-    const prev  = document.createElement('button');
-    prev.className = 'gallery-arrow left';
-    prev.id = 'gPrev';
-    prev.setAttribute('aria-label','Scroll left');
-    prev.textContent = '◀';
-
-    const next  = document.createElement('button');
-    next.className = 'gallery-arrow right';
-    next.id = 'gNext';
-    next.setAttribute('aria-label','Scroll right');
-    next.textContent = '▶';
 
     const row   = document.createElement('div');
     row.className = 'gallery-row';
@@ -444,18 +455,35 @@ function openStation(s) {
       row.appendChild(img);
     });
 
+    const overlay = document.createElement('div');
+    overlay.className = 'gallery-overlay';
+
+    const prev  = document.createElement('button');
+    prev.className = 'gallery-arrow left';
+    prev.id = 'gPrev';
+    prev.setAttribute('aria-label','Scroll left');
+    prev.textContent = '◀';
+
+    const next  = document.createElement('button');
+    next.className = 'gallery-arrow right';
+    next.id = 'gNext';
+    next.setAttribute('aria-label','Scroll right');
+    next.textContent = '▶';
+
+    overlay.appendChild(prev);
+    overlay.appendChild(next);
+
     wrap.appendChild(row);
-    wrap.appendChild(prev);
-    wrap.appendChild(next);
+    wrap.appendChild(overlay);
     mount.appendChild(wrap);
 
-    const gap = 8;
-    const getStep = () => {
+    // Step size ~ one image width + gap (8px), computed on demand
+    const step = () => {
       const firstImg = row.querySelector('img');
-      return firstImg ? firstImg.clientWidth + gap : Math.max(300, row.clientWidth * 0.8);
+      return firstImg ? firstImg.clientWidth + gapPx : Math.max(300, row.clientWidth * 0.8);
     };
-    prev.onclick = () => row.scrollBy({ left: -getStep(), behavior: 'smooth' });
-    next.onclick = () => row.scrollBy({ left:  getStep(), behavior: 'smooth' });
+    prev.onclick = () => row.scrollBy({ left: -step(), behavior: 'smooth' });
+    next.onclick = () => row.scrollBy({ left:  step(), behavior: 'smooth' });
 
   } else {
     // No local images → Wikipedia/Commons fallback
@@ -489,6 +517,7 @@ function openStation(s) {
     });
   }
 }
+
 
 
 
