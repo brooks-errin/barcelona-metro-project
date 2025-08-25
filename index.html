@@ -161,6 +161,54 @@
 /* hide any legacy arrows (if they exist as direct children of wrap) */
 .sheet .gallery-wrap > .gallery-arrow{ display:none !important; }
 
+/* === Anchor station modal arrows to the modal width === */
+
+/* 1) The sheet is the stable width container */
+.sheet { position: relative; }
+
+/* 2) Force the gallery wrapper to the modal width */
+.sheet .gallery-wrap{
+  position: relative;
+  display: block;
+  width: 100% !important;      /* don't grow to content width */
+  max-width: 100% !important;
+  overflow: hidden;            /* clip any overflow */
+}
+
+/* 3) The scrolling row fills the wrapper; leave gutter for arrows */
+:root { --gallery-gutter: 72px; }  /* tweak spacing if you want */
+.sheet .gallery-row{
+  width: 100% !important;
+  box-sizing: content-box;     /* padding doesn't shrink content area */
+  padding: 0 var(--gallery-gutter) !important;  /* space for arrows on both sides */
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  scroll-snap-type: x mandatory;
+}
+
+/* 4) Put the arrow overlay over the wrapper (modal width), NOT the content width */
+.sheet .gallery-overlay{
+  position: absolute;
+  top: 0; bottom: 0; left: 0; right: 0;   /* equals .gallery-wrap width */
+  pointer-events: none;
+  z-index: 9990;
+}
+
+/* 5) Buttons are clickable and anchored to the sides of the modal */
+.sheet .gallery-overlay .gallery-arrow{
+  pointer-events: auto;
+  position: absolute; top: 50%; transform: translateY(-50%);
+  width: 44px; height: 44px; display: grid; place-items: center;
+  background: #202028; border: 1px solid #2a2a30; color: var(--fg);
+  border-radius: 999px; box-shadow: 0 8px 20px rgba(0,0,0,.4);
+  z-index: 9991;
+}
+.sheet .gallery-overlay .gallery-arrow.left  { left: 12px; }
+.sheet .gallery-overlay .gallery-arrow.right { right: 12px; }
+
 
   </style>
 </head>
