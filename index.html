@@ -100,114 +100,68 @@
 .sheet #sheetContent > .meta:first-of-type { margin-bottom: 16px; } /* try 16–24px */
 
 
-/* === Station modal gallery — single source of truth === */
-.sheet .gallery-wrap{ position:relative; overflow:hidden; }
-
-.sheet .gallery-row{
-  display:flex;
-  gap:8px;
-  overflow-x:auto;
-  overflow-y:hidden;
-  scroll-behavior:smooth;
-  scroll-snap-type:x mandatory;
-  padding:0 72px;             /* space so arrows never sit over a photo */
-  position:relative;
-  z-index:0;                   /* images live below overlay */
-  -ms-overflow-style:none;
-  scrollbar-width:none;
-}
-.sheet .gallery-row::-webkit-scrollbar{ display:none; }
-
-.sheet .gallery-row img{
-  flex:0 0 auto;
-  height:220px;
-  width:auto;
-  border-radius:12px;
-  cursor:pointer;
-  scroll-snap-align:start;
-  position:relative;
-  z-index:0;
-}
-
-/* edge fades (under the overlay) */
-.sheet .gallery-wrap::before,
-.sheet .gallery-wrap::after{
-  content:"";
-  position:absolute;
-  top:0; bottom:0; width:32px;
-  pointer-events:none;
-  z-index:1;
-}
-.sheet .gallery-wrap::before{ left:0;  background:linear-gradient(90deg, rgba(15,15,18,1), rgba(15,15,18,0)); }
-.sheet .gallery-wrap::after { right:0; background:linear-gradient(270deg, rgba(15,15,18,1), rgba(15,15,18,0)); }
-
-/* overlay layer that hosts the buttons, above images & fades */
-.sheet .gallery-overlay{
-  position:absolute; inset:0;
-  pointer-events:none;          /* container ignores clicks */
-  z-index:9990;
-}
-.sheet .gallery-overlay .gallery-arrow{
-  pointer-events:auto;          /* buttons receive clicks */
-  position:absolute; top:50%; transform:translateY(-50%);
-  width:44px; height:44px; display:grid; place-items:center;
-  background:#202028; border:1px solid #2a2a30; color:var(--fg);
-  border-radius:999px; box-shadow:0 8px 20px rgba(0,0,0,.4);
-  z-index:9991;
-}
-.sheet .gallery-overlay .gallery-arrow.left  { left:12px; }
-.sheet .gallery-overlay .gallery-arrow.right { right:12px; }
-
-/* hide any legacy arrows (if they exist as direct children of wrap) */
-.sheet .gallery-wrap > .gallery-arrow{ display:none !important; }
-
-/* === Anchor station modal arrows to the modal width === */
-
-/* 1) The sheet is the stable width container */
+/* === Station modal gallery (anchored to modal width) === */
 .sheet { position: relative; }
 
-/* 2) Force the gallery wrapper to the modal width */
 .sheet .gallery-wrap{
   position: relative;
-  display: block;
-  width: 100% !important;      /* don't grow to content width */
-  max-width: 100% !important;
-  overflow: hidden;            /* clip any overflow */
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
 }
 
-/* 3) The scrolling row fills the wrapper; leave gutter for arrows */
-:root { --gallery-gutter: 72px; }  /* tweak spacing if you want */
-.sheet .gallery-row{
-  width: 100% !important;
-  box-sizing: content-box;     /* padding doesn't shrink content area */
-  padding: 0 var(--gallery-gutter) !important;  /* space for arrows on both sides */
-  display: flex;
-  gap: 8px;
+/* viewport is the only scroll container; it is EXACTLY the modal width */
+.sheet .gallery-viewport{
+  position: relative;
+  width: 100%;
   overflow-x: auto;
   overflow-y: hidden;
+  padding: 0 72px;                 /* gutters so arrows don't cover photos */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.sheet .gallery-viewport::-webkit-scrollbar{ display: none; }
+
+/* the long strip of images */
+.sheet .gallery-row{
+  display: flex;
+  gap: 8px;
   scroll-behavior: smooth;
   scroll-snap-type: x mandatory;
 }
-
-/* 4) Put the arrow overlay over the wrapper (modal width), NOT the content width */
-.sheet .gallery-overlay{
-  position: absolute;
-  top: 0; bottom: 0; left: 0; right: 0;   /* equals .gallery-wrap width */
-  pointer-events: none;
-  z-index: 9990;
+.sheet .gallery-row img{
+  flex: 0 0 auto;
+  height: 220px;
+  width: auto;
+  border-radius: 12px;
+  cursor: pointer;
+  scroll-snap-align: start;
 }
 
-/* 5) Buttons are clickable and anchored to the sides of the modal */
-.sheet .gallery-overlay .gallery-arrow{
-  pointer-events: auto;
+/* edge fades (under arrows) */
+.sheet .gallery-wrap::before,
+.sheet .gallery-wrap::after{
+  content:"";
+  position:absolute; top:0; bottom:0; width:32px;
+  pointer-events:none; z-index: 1;
+  background: linear-gradient(90deg, rgba(15,15,18,1), rgba(15,15,18,0));
+}
+.sheet .gallery-wrap::after{
+  right:0; left:auto;
+  transform: scaleX(-1);
+}
+
+/* arrows are siblings of the viewport, pinned to wrap (modal) edges */
+.sheet .gallery-arrow{
   position: absolute; top: 50%; transform: translateY(-50%);
   width: 44px; height: 44px; display: grid; place-items: center;
   background: #202028; border: 1px solid #2a2a30; color: var(--fg);
   border-radius: 999px; box-shadow: 0 8px 20px rgba(0,0,0,.4);
-  z-index: 9991;
+  z-index: 3; pointer-events: auto;
 }
-.sheet .gallery-overlay .gallery-arrow.left  { left: 12px; }
-.sheet .gallery-overlay .gallery-arrow.right { right: 12px; }
+.sheet .gallery-arrow.left  { left: 12px; }
+.sheet .gallery-arrow.right { right: 12px; }
+
 
 
   </style>
@@ -480,75 +434,34 @@ function openStation(s) {
   modal.setAttribute('aria-hidden', 'false');
   document.body.classList.add('modal-open');
 
-  // Build the gallery DOM
+  // Build the gallery DOM (viewport = modal width; arrows pinned to wrap)
   const mount = document.getElementById('galleryMount');
 
+  const wrap = document.createElement('div');
+  wrap.className = 'gallery-wrap';
+
+  const viewportEl = document.createElement('div');
+  viewportEl.className = 'gallery-viewport';
+
+  const rowEl = document.createElement('div');
+  rowEl.className = 'gallery-row';
+  rowEl.id = 'gRow';
+
+  // Add local images if any
   if (gal.length) {
-// Local images gallery (overlayed arrows)
-const wrap  = document.createElement('div');
-wrap.className = 'gallery-wrap';
-
-const row   = document.createElement('div');
-row.className = 'gallery-row';
-row.id = 'gRow';
-
-gal.forEach((g, idx) => {
-  const img = document.createElement('img');
-  img.src = g.src;
-  img.alt = g.alt || ('Photo of ' + s.name);
-  img.setAttribute('data-idx', idx);
-  img.addEventListener('click', () => openLightbox(gal, idx, s.name));
-  row.appendChild(img);
-});
-
-// overlay ABOVE the row for always-clickable arrows
-const overlay = document.createElement('div');
-overlay.className = 'gallery-overlay';
-
-const prev  = document.createElement('button');
-prev.className = 'gallery-arrow left';
-prev.id = 'gPrev';
-prev.setAttribute('aria-label','Scroll left');
-prev.textContent = '◀';
-
-const next  = document.createElement('button');
-next.className = 'gallery-arrow right';
-next.id = 'gNext';
-next.setAttribute('aria-label','Scroll right');
-next.textContent = '▶';
-
-overlay.appendChild(prev);
-overlay.appendChild(next);
-
-wrap.appendChild(row);
-wrap.appendChild(overlay);
-mount.appendChild(wrap);
-
-// scroll step ~ one image width + 8px gap
-const step = () => {
-  const firstImg = row.querySelector('img');
-  const gapPx = 8;
-  return firstImg ? firstImg.clientWidth + gapPx : Math.max(300, row.clientWidth * 0.8);
-};
-prev.onclick = () => row.scrollBy({ left: -step(), behavior: 'smooth' });
-next.onclick = () => row.scrollBy({ left:  step(), behavior: 'smooth' });
-
-
+    gal.forEach((g, idx) => {
+      const img = document.createElement('img');
+      img.src = g.src;
+      img.alt = g.alt || ('Photo of ' + s.name);
+      img.setAttribute('data-idx', idx);
+      img.addEventListener('click', () => openLightbox(gal, idx, s.name));
+      rowEl.appendChild(img);
+    });
   } else {
-    // No local images → Wikipedia/Commons fallback
-    const wrap = document.createElement('div');
-    wrap.className = 'gallery-wrap';
-    const row  = document.createElement('div');
-    row.className = 'gallery-row';
-    row.id = 'gRow';
-    wrap.appendChild(row);
-    mount.appendChild(wrap);
-
+    // Wikipedia/Commons fallback
     const credit = document.createElement('div');
     credit.className = 'caption';
     credit.style.cssText = 'font-size:12px;opacity:.8;margin-top:6px;';
-    mount.appendChild(credit);
-
     ensureWikiThumb(s).then(url => {
       if (url) {
         const img = document.createElement('img');
@@ -557,15 +470,47 @@ next.onclick = () => row.scrollBy({ left:  step(), behavior: 'smooth' });
         img.addEventListener('click', () =>
           openLightbox([{ src: url, caption: 'Image via Wikipedia/Commons' }], 0, s.name)
         );
-        row.appendChild(img);
+        rowEl.appendChild(img);
         credit.textContent = 'Image via Wikipedia/Commons';
       } else {
-        row.innerHTML = '<div style="color:#aaa;padding:8px 0;">No photos yet.</div>';
+        rowEl.innerHTML = '<div style="color:#aaa;padding:8px 0;">No photos yet.</div>';
         credit.textContent = '';
       }
     });
+    mount.appendChild(credit);
   }
+
+  viewportEl.appendChild(rowEl);
+  wrap.appendChild(viewportEl);
+
+  // Arrows pinned to the modal-width wrap
+  const prevBtn = document.createElement('button');
+  prevBtn.className = 'gallery-arrow left';
+  prevBtn.id = 'gPrev';
+  prevBtn.setAttribute('aria-label', 'Scroll left');
+  prevBtn.textContent = '◀';
+
+  const nextBtn = document.createElement('button');
+  nextBtn.className = 'gallery-arrow right';
+  nextBtn.id = 'gNext';
+  nextBtn.setAttribute('aria-label', 'Scroll right');
+  nextBtn.textContent = '▶';
+
+  wrap.appendChild(prevBtn);
+  wrap.appendChild(nextBtn);
+
+  mount.appendChild(wrap);
+
+  // Scroll the VIEWPORT (fixed to modal width)
+  const step = () => {
+    const firstImg = rowEl.querySelector('img');
+    const gapPx = 8;
+    return firstImg ? firstImg.clientWidth + gapPx : Math.max(300, viewportEl.clientWidth * 0.8);
+  };
+  prevBtn.onclick = () => viewportEl.scrollBy({ left: -step(), behavior: 'smooth' });
+  nextBtn.onclick = () => viewportEl.scrollBy({ left:  step(), behavior: 'smooth' });
 }
+
 
 
 
