@@ -195,6 +195,35 @@
 /* hide any legacy arrows that might still be in the wrap */
 .sheet .gallery-wrap > .gallery-arrow { display: none !important; }
 
+/* --- FORCE station modal arrows above images --- */
+.sheet .gallery-wrap { position: relative; overflow: hidden; }
+
+/* give arrows room; override earlier rule */
+.sheet .gallery-row {
+  position: relative !important;
+  z-index: 0 !important;
+  padding: 0 64px !important;   /* room for both arrows */
+}
+
+/* keep fades under arrows */
+.sheet .gallery-wrap::before,
+.sheet .gallery-wrap::after { z-index: 1 !important; }
+
+/* arrows: highest layer and clickable */
+.sheet .gallery-arrow {
+  position: absolute !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  width: 44px; height: 44px;
+  display: grid; place-items: center;
+  background: #202028; border: 1px solid #2a2a30; color: var(--fg);
+  border-radius: 999px; box-shadow: 0 8px 20px rgba(0,0,0,.4);
+  z-index: 999 !important;          /* <- wins the stack war */
+  pointer-events: auto !important;
+}
+.sheet .gallery-arrow.left  { left: 12px !important; }
+.sheet .gallery-arrow.right { right: 12px !important; }
+
 
 
   </style>
