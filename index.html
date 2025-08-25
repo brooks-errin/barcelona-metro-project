@@ -78,18 +78,6 @@
     /* Lock background when any modal is open */
     body.modal-open { overflow: hidden; }
 
-    /* Station detail gallery (scrollable row + arrows, no visible scrollbar) */
-    .sheet { overflow-x: hidden; }
-    .sheet .gallery-wrap { position: relative; overflow: hidden; }
-    .sheet .gallery-row { display: flex; gap: 8px; overflow-x: auto; overflow-y: hidden; scroll-behavior: smooth; padding-bottom: 4px; scroll-snap-type: x mandatory; -ms-overflow-style: none; scrollbar-width: none; }
-    .sheet .gallery-row::-webkit-scrollbar { display: none; }
-    .sheet .gallery-row img { height: 220px; width: auto; border-radius: 12px; flex: 0 0 auto; cursor: pointer; scroll-snap-align: start; }
-    .gallery-arrow { position: absolute; top: 50%; transform: translateY(-50%); background: #202028; border: 1px solid #2a2a30; color: var(--fg); border-radius: 999px; padding: 8px 10px; cursor: pointer; z-index: 2; box-shadow: 0 4px 16px rgba(0,0,0,.25); }
-    .gallery-arrow.left  { left: 6px; }
-    .gallery-arrow.right { right: 6px; }
-    .sheet .gallery-wrap::before, .sheet .gallery-wrap::after { content: ""; position: absolute; top: 0; bottom: 0; width: 24px; pointer-events: none; }
-    .sheet .gallery-wrap::before { left: 0;  background: linear-gradient(90deg, rgba(15,15,18,1), rgba(15,15,18,0)); }
-    .sheet .gallery-wrap::after  { right: 0; background: linear-gradient(270deg, rgba(15,15,18,1), rgba(15,15,18,0)); }
 
     /* Fullscreen lightbox */
     .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,.92); display: none; align-items: center; justify-content: center; z-index: 100002; }
@@ -107,123 +95,71 @@
       aside { position: absolute; inset: auto 0 0 0; height: 40vh; }
     }
 
-    /* Ensure both gallery arrows are visible and above the fades */
-.sheet .gallery-wrap { position: relative; overflow: hidden; }
-
-/* put fades *under* the arrows */
-.sheet .gallery-wrap::before,
-.sheet .gallery-wrap::after {
-  z-index: 1;
-}
-
-/* arrows above everything in the gallery area */
-.gallery-arrow {
-  z-index: 3;
-}
-
-/* position both arrows inside the gallery */
-.gallery-arrow.left  { left: 8px; }
-.gallery-arrow.right { right: 8px; display: inline-flex; }
 
 /* Extra space between the top badges (.meta) and the gallery */
 .sheet #sheetContent > .meta:first-of-type { margin-bottom: 16px; } /* try 16–24px */
 
-/* --- FIX: arrows above images and clickable --- */
-.sheet .gallery-wrap { position: relative; }
-.sheet .gallery-row { position: relative; z-index: 1; padding: 0 40px; } /* space so arrows aren’t on top of images */
-.gallery-arrow { position: absolute; z-index: 5; pointer-events: auto; display: grid; place-items: center; width: 36px; height: 36px; }
-.gallery-arrow.left  { left: 8px; }
-.gallery-arrow.right { right: 8px; }
 
-/* fades stay under arrows */
+/* === Station modal gallery — single source of truth === */
+.sheet .gallery-wrap{ position:relative; overflow:hidden; }
+
+.sheet .gallery-row{
+  display:flex;
+  gap:8px;
+  overflow-x:auto;
+  overflow-y:hidden;
+  scroll-behavior:smooth;
+  scroll-snap-type:x mandatory;
+  padding:0 72px;             /* space so arrows never sit over a photo */
+  position:relative;
+  z-index:0;                   /* images live below overlay */
+  -ms-overflow-style:none;
+  scrollbar-width:none;
+}
+.sheet .gallery-row::-webkit-scrollbar{ display:none; }
+
+.sheet .gallery-row img{
+  flex:0 0 auto;
+  height:220px;
+  width:auto;
+  border-radius:12px;
+  cursor:pointer;
+  scroll-snap-align:start;
+  position:relative;
+  z-index:0;
+}
+
+/* edge fades (under the overlay) */
 .sheet .gallery-wrap::before,
-.sheet .gallery-wrap::after { z-index: 2; }
-
-/* --- Gallery arrow overlay fix --- */
-.sheet .gallery-wrap { position: relative; }
-.sheet .gallery-row { position: relative; z-index: 1; padding: 0 56px; } /* room for arrows */
-.sheet .gallery-wrap::before,
-.sheet .gallery-wrap::after { z-index: 2; } /* fades under overlay */
-
-.sheet .gallery-overlay {
-  position: absolute; inset: 0;
-  z-index: 6;                  /* above images & fades */
-  pointer-events: none;        /* overlay itself doesn't eat clicks */
+.sheet .gallery-wrap::after{
+  content:"";
+  position:absolute;
+  top:0; bottom:0; width:32px;
+  pointer-events:none;
+  z-index:1;
 }
+.sheet .gallery-wrap::before{ left:0;  background:linear-gradient(90deg, rgba(15,15,18,1), rgba(15,15,18,0)); }
+.sheet .gallery-wrap::after { right:0; background:linear-gradient(270deg, rgba(15,15,18,1), rgba(15,15,18,0)); }
 
-/* actual buttons DO receive clicks */
-.sheet .gallery-overlay .gallery-arrow {
-  pointer-events: auto;
-  position: absolute; top: 50%; transform: translateY(-50%);
-  width: 40px; height: 40px; display: grid; place-items: center;
-  background: #202028; border: 1px solid #2a2a30; color: var(--fg);
-  border-radius: 999px; box-shadow: 0 6px 18px rgba(0,0,0,.35);
-  z-index: 7; /* over everything in overlay */
+/* overlay layer that hosts the buttons, above images & fades */
+.sheet .gallery-overlay{
+  position:absolute; inset:0;
+  pointer-events:none;          /* container ignores clicks */
+  z-index:9990;
 }
-.sheet .gallery-overlay .gallery-arrow.left  { left: 8px; }
-.sheet .gallery-overlay .gallery-arrow.right { right: 8px; }
-
-/* --- Station modal gallery (NOT the fullscreen lightbox) --- */
-.sheet .gallery-wrap { position: relative; overflow: hidden; }
-
-/* give room so arrows aren't sitting on top of photos */
-.sheet .gallery-row { position: relative; z-index: 1; padding: 0 64px; }
-
-/* keep fades under the overlay */
-.sheet .gallery-wrap::before,
-.sheet .gallery-wrap::after { z-index: 2; }
-
-/* arrow overlay sits above images + fades */
-.sheet .gallery-overlay {
-  position: absolute; inset: 0;
-  z-index: 8;                 /* above images/fades */
-  pointer-events: none;       /* overlay itself doesn't eat clicks */
+.sheet .gallery-overlay .gallery-arrow{
+  pointer-events:auto;          /* buttons receive clicks */
+  position:absolute; top:50%; transform:translateY(-50%);
+  width:44px; height:44px; display:grid; place-items:center;
+  background:#202028; border:1px solid #2a2a30; color:var(--fg);
+  border-radius:999px; box-shadow:0 8px 20px rgba(0,0,0,.4);
+  z-index:9991;
 }
+.sheet .gallery-overlay .gallery-arrow.left  { left:12px; }
+.sheet .gallery-overlay .gallery-arrow.right { right:12px; }
 
-/* buttons get the clicks */
-.sheet .gallery-overlay .gallery-arrow {
-  pointer-events: auto;
-  position: absolute; top: 50%; transform: translateY(-50%);
-  width: 44px; height: 44px; display: grid; place-items: center;
-  background: #202028; border: 1px solid #2a2a30; color: var(--fg);
-  border-radius: 999px; box-shadow: 0 8px 20px rgba(0,0,0,.4);
-  z-index: 9;
-}
-.sheet .gallery-overlay .gallery-arrow.left  { left: 12px; }
-.sheet .gallery-overlay .gallery-arrow.right { right: 12px; }
-
-/* hide any legacy arrows that might still be in the wrap */
-.sheet .gallery-wrap > .gallery-arrow { display: none !important; }
-
-/* --- FORCE station modal arrows above images --- */
-.sheet .gallery-wrap { position: relative; overflow: hidden; }
-
-/* give arrows room; override earlier rule */
-.sheet .gallery-row {
-  position: relative !important;
-  z-index: 0 !important;
-  padding: 0 64px !important;   /* room for both arrows */
-}
-
-/* keep fades under arrows */
-.sheet .gallery-wrap::before,
-.sheet .gallery-wrap::after { z-index: 1 !important; }
-
-/* arrows: highest layer and clickable */
-.sheet .gallery-arrow {
-  position: absolute !important;
-  top: 50% !important;
-  transform: translateY(-50%) !important;
-  width: 44px; height: 44px;
-  display: grid; place-items: center;
-  background: #202028; border: 1px solid #2a2a30; color: var(--fg);
-  border-radius: 999px; box-shadow: 0 8px 20px rgba(0,0,0,.4);
-  z-index: 999 !important;          /* <- wins the stack war */
-  pointer-events: auto !important;
-}
-.sheet .gallery-arrow.left  { left: 12px !important; }
-.sheet .gallery-arrow.right { right: 12px !important; }
-
+/* hide any legacy arrows (if they exist as direct children of wrap) */
+.sheet .gallery-wrap > .gallery-arrow{ display:none !important; }
 
 
   </style>
