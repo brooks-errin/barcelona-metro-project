@@ -109,68 +109,41 @@
     /* === Station modal gallery (anchored to modal width) === */
 .sheet { position: relative; }
 
-.sheet .gallery-wrap{
-  position: relative;
-  width: 100%;
-  max-width: 100%;
-  overflow: hidden;              /* clips gradients, not arrows */
-}
-
-.sheet .gallery-viewport{
-  position: relative;
-  width: 100%;
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding: 0 72px;               /* gutters so arrows don’t cover photos */
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-.sheet .gallery-viewport::-webkit-scrollbar{ display: none; }
-
-.sheet .gallery-row{
-  display: flex;
+/* Peek grid (replaces the slider UI) */
+.sheet .peek-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
   gap: 8px;
-  scroll-behavior: smooth;
-  scroll-snap-type: x mandatory;
-  position: relative;
+  margin-top: 10px;
 }
-.sheet .gallery-row img{
-  flex: 0 0 auto;
-  height: 220px;
-  width: auto;
+.sheet .peek-grid img,
+.sheet .peek-tile {
+  width: 100%;
+  height: 180px;              /* tweak to taste */
+  object-fit: cover;
   border-radius: 12px;
-  cursor: pointer;
-  scroll-snap-align: start;
+  background: #202028;
   position: relative;
-  z-index: 1;                    /* under arrows */
+  cursor: pointer;
+  display: block;
+}
+.sheet .peek-tile {
+  background-position: center;
+  background-size: cover;
+}
+.sheet .peek-tile::after {
+  content: attr(data-more);
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(0,0,0,.45);
+  color: #fff;
+  font-weight: 700;
+  font-size: 18px;
+  border-radius: 12px;
 }
 
-/* edge fades (under arrows) */
-.sheet .gallery-wrap::before,
-.sheet .gallery-wrap::after{
-  content:"";
-  position:absolute; top:0; bottom:0; width:32px;
-  pointer-events:none;
-  background: linear-gradient(90deg, rgba(15,15,18,1), rgba(15,15,18,0));
-  z-index: 2;                    /* below arrows, above images */
-}
-.sheet .gallery-wrap::after{
-  right:0; left:auto;
-  transform: scaleX(-1);
-}
-
-/* arrows pinned to wrap (on top of everything) */
-.sheet .gallery-arrow{
-  position: absolute; top: 50%; transform: translateY(-50%);
-  width: 44px; height: 44px; display: grid; place-items: center;
-  background: #202028; border: 1px solid #2a2a30; color: var(--fg);
-  border-radius: 999px; box-shadow: 0 8px 20px rgba(0,0,0,.4);
-  z-index: 4;                    /* highest */
-  pointer-events: auto;
-}
-.sheet .gallery-arrow.left  { left: 12px; }
-.sheet .gallery-arrow.right { right: 12px; }
-.sheet .gallery-arrow:disabled { opacity: .35; pointer-events: none; }
 
   </style>
 </head>
@@ -473,7 +446,7 @@
     function openStation(s) {
   const gal = normalizeGallery(s.gallery);
 
-  // Build base HTML
+  // ----- Header / badges / meta -----
   let html = '';
   html += '<h2 style="margin:6px 0 4px">' + s.name + '</h2>';
   html += '<div class="meta">';
@@ -484,9 +457,10 @@
   if (s.district) html += '<span class="badge">' + s.district + '</span>';
   html += '</div>';
 
-  // Always include a mount for the gallery
+  // Mount for the gallery UI
   html += '<div id="galleryMount"></div>';
 
+  // Activities / notes / tags
   const acts = s.activities || [];
   if (acts.length) {
     html += '<div><h3 style="margin:12px 0 6px; font-size:15px;">Activities</h3><ul>';
@@ -508,102 +482,71 @@
   modal.setAttribute('aria-hidden', 'false');
   document.body.classList.add('modal-open');
 
-  // ====== GALLERY BUILD (patched) ======
-  // viewport = modal width; arrows pinned to wrap; spacer avoids arrow overlap
+  // ----- Peek grid (3 thumbs + "+N" tile) -----
   const mount = document.getElementById('galleryMount');
 
-  const wrap = document.createElement('div');
-  wrap.className = 'gallery-wrap';
+  // If we have local images
+  if (gal.length > 0) {
+    const grid = document.createElement('div');
+    grid.className = 'peek-grid';
 
-  const viewportEl = document.createElement('div');
-  viewportEl.className = 'gallery-viewport';
-
-  const rowEl = document.createElement('div');
-  rowEl.className = 'gallery-row';
-  rowEl.id = 'gRow';
-
-  // Add local images if any
-  if (gal.length) {
-    gal.forEach((g, idx) => {
+    const show = Math.min(3, gal.length);
+    for (let i = 0; i < show; i++) {
       const img = document.createElement('img');
-      img.src = g.src;
-      img.alt = g.alt || ('Photo of ' + s.name);
-      img.setAttribute('data-idx', idx);
-      img.addEventListener('click', () => openLightbox(gal, idx, s.name));
-      rowEl.appendChild(img);
-    });
-  } else {
-    // Wikipedia/Commons fallback
-    const credit = document.createElement('div');
-    credit.className = 'caption';
-    credit.style.cssText = 'font-size:12px;opacity:.8;margin-top:6px;';
-    ensureWikiThumb(s).then(url => {
-      if (url) {
-        const img = document.createElement('img');
-        img.src = url;
-        img.alt = 'Preview of ' + s.name;
-        img.addEventListener('click', () =>
-          openLightbox([{ src: url, caption: 'Image via Wikipedia/Commons' }], 0, s.name)
-        );
-        rowEl.appendChild(img);
-        credit.textContent = 'Image via Wikipedia/Commons';
-      } else {
-        rowEl.innerHTML = '<div style="color:#aaa;padding:8px 0;">No photos yet.</div>';
-        credit.textContent = '';
-      }
-    });
-    mount.appendChild(credit);
+      img.src = gal[i].src;
+      img.alt = gal[i].alt || ('Photo of ' + s.name);
+      img.addEventListener('click', () => openLightbox(gal, i, s.name));
+      grid.appendChild(img);
+    }
+
+    if (gal.length > show) {
+      const moreCount = gal.length - show;
+      const moreTile = document.createElement('div');
+      moreTile.className = 'peek-tile';
+      moreTile.setAttribute('data-more', '+' + moreCount + ' photos');
+      // Use the 4th image as the tile background if available
+      const bgSrc = gal[show]?.src || gal[gal.length - 1].src;
+      moreTile.style.backgroundImage = `url("${bgSrc}")`;
+      moreTile.addEventListener('click', () => openLightbox(gal, show, s.name));
+      grid.appendChild(moreTile);
+    } else if (gal.length === 3) {
+      // Keep the grid balanced with an empty tile if exactly 3
+      const spacer = document.createElement('div');
+      spacer.className = 'peek-tile';
+      spacer.style.background = '#202028';
+      spacer.setAttribute('data-more', '');
+      spacer.style.cursor = 'default';
+      grid.appendChild(spacer);
+    }
+
+    mount.appendChild(grid);
+    return;
   }
 
-  // Spacer so the last image never sits under the right arrow
-  const endSpacer = document.createElement('div');
-  endSpacer.style.cssText = 'flex:0 0 72px;';  // matches viewport right padding
-  rowEl.appendChild(endSpacer);
+  // No local images — try Wikipedia/Commons preview
+  const fallback = document.createElement('div');
+  fallback.className = 'peek-grid';
+  const holder = document.createElement('div');
+  holder.className = 'peek-tile';
+  holder.setAttribute('data-more', 'View photo');
+  holder.style.background = '#202028';
+  fallback.appendChild(holder);
+  mount.appendChild(fallback);
 
-  viewportEl.appendChild(rowEl);
-  wrap.appendChild(viewportEl);
-
-  // Arrows pinned to the modal-width wrap
-  const prevBtn = document.createElement('button');
-  prevBtn.className = 'gallery-arrow left';
-  prevBtn.id = 'gPrev';
-  prevBtn.setAttribute('aria-label', 'Scroll left');
-  prevBtn.textContent = '◀';
-
-  const nextBtn = document.createElement('button');
-  nextBtn.className = 'gallery-arrow right';
-  nextBtn.id = 'gNext';
-  nextBtn.setAttribute('aria-label', 'Scroll right');
-  nextBtn.textContent = '▶';
-
-  wrap.appendChild(prevBtn);
-  wrap.appendChild(nextBtn);
-
-  mount.appendChild(wrap);
-
-  // Scroll amount = one image width or 80% viewport
-  const step = () => {
-    const firstImg = rowEl.querySelector('img');
-    const gapPx = 8;
-    return firstImg ? firstImg.clientWidth + gapPx : Math.max(300, viewportEl.clientWidth * 0.8);
-  };
-
-  // Show/hide (disable) arrows at edges
-  function updateArrows(){
-    const maxScroll = rowEl.scrollWidth - viewportEl.clientWidth;
-    const x = Math.max(0, Math.min(viewportEl.scrollLeft, maxScroll));
-    prevBtn.disabled = x <= 1;                 // near left
-    nextBtn.disabled = x >= maxScroll - 1;     // near right
-  }
-
-  prevBtn.onclick = () => { viewportEl.scrollBy({ left: -step(), behavior: 'smooth' }); };
-  nextBtn.onclick = () => { viewportEl.scrollBy({ left:  step(), behavior: 'smooth' }); };
-
-  viewportEl.addEventListener('scroll', updateArrows, { passive: true });
-  window.addEventListener('resize', updateArrows);
-  requestAnimationFrame(updateArrows);
-  // ====== /GALLERY BUILD (patched) ======
+  ensureWikiThumb(s).then(url => {
+    if (url) {
+      holder.style.backgroundImage = `url("${url}")`;
+      holder.addEventListener('click', () =>
+        openLightbox([{ src: url, caption: 'Image via Wikipedia/Commons' }], 0, s.name)
+      );
+      holder.setAttribute('data-more', 'View photo');
+    } else {
+      holder.setAttribute('data-more', 'No photos');
+      holder.style.cursor = 'default';
+    }
+  });
 }
+
 
 
     // ------------------------------
