@@ -13,8 +13,7 @@
   <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2"></script>
 
   <!-- favicon upload -->
-   <link rel="icon" type="image/png" href="photos/favicon.png?v=1">
-
+  <link rel="icon" type="image/png" href="photos/favicon.png?v=1">
 
   <style>
     :root {
@@ -42,6 +41,7 @@
       display: grid; grid-template-columns: 1fr 420px; gap: 0;
       height: calc(100vh - 64px);
     }
+
     #map { width: 100%; height: 100%; }
     aside {
       border-left: 1px solid #232327; height: 100%;
@@ -51,9 +51,24 @@
     .controls { padding: 14px; display: grid; gap: 12px; border-bottom: 1px solid #232327; }
     .search { display: flex; gap: 8px; align-items: center; background: var(--card); border-radius: var(--radius); padding: 10px 12px; }
     .search input { background: transparent; border: 0; outline: 0; color: var(--fg); width: 100%; }
+
+    /* New filter controls */
+    .filters-row { display: grid; gap: 10px; }
+    .filter-group { display: grid; gap: 6px; }
+    .filter-label { font-size: 12px; color: var(--muted); }
+    select, .btn {
+      background: #202028; color: var(--fg); border: 1px solid #2a2a30;
+      border-radius: 12px; padding: 10px 12px; font-size: 14px;
+    }
+    select[multiple] { min-height: 110px; }
+    .btn { cursor: pointer; }
+    .btn.ghost { background: #202028; }
+    .btn.clear { background: transparent; border-color: #2a2a30; color: var(--muted); }
+
     .chips { display: flex; flex-wrap: wrap; gap: 8px; }
     .chip { font-size: 12px; padding: 6px 10px; border-radius: 999px; border: 1px solid #2a2a30; cursor: pointer; user-select: none; }
     .chip.active { border-color: var(--accent); color: var(--accent); }
+
     .list { overflow: auto; padding: 10px 10px 18px; }
     .card { background: var(--card); border: 1px solid #232327; border-radius: var(--radius); padding: 12px; margin: 10px; display: grid; gap: 8px; cursor: pointer; }
     .meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
@@ -78,7 +93,6 @@
     /* Lock background when any modal is open */
     body.modal-open { overflow: hidden; }
 
-
     /* Fullscreen lightbox */
     .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,.92); display: none; align-items: center; justify-content: center; z-index: 100002; }
     .lightbox.open { display: flex; }
@@ -95,75 +109,42 @@
       aside { position: absolute; inset: auto 0 0 0; height: 40vh; }
     }
 
+    /* Extra space between the top badges (.meta) and the gallery */
+    .sheet #sheetContent > .meta:first-of-type { margin-bottom: 16px; }
 
-/* Extra space between the top badges (.meta) and the gallery */
-.sheet #sheetContent > .meta:first-of-type { margin-bottom: 16px; } /* try 16–24px */
-
-
-/* === Station modal gallery (anchored to modal width) === */
-.sheet { position: relative; }
-
-.sheet .gallery-wrap{
-  position: relative;
-  width: 100%;
-  max-width: 100%;
-  overflow: hidden;
-}
-
-/* viewport is the only scroll container; it is EXACTLY the modal width */
-.sheet .gallery-viewport{
-  position: relative;
-  width: 100%;
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding: 0 72px;                 /* gutters so arrows don't cover photos */
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-.sheet .gallery-viewport::-webkit-scrollbar{ display: none; }
-
-/* the long strip of images */
-.sheet .gallery-row{
-  display: flex;
-  gap: 8px;
-  scroll-behavior: smooth;
-  scroll-snap-type: x mandatory;
-}
-.sheet .gallery-row img{
-  flex: 0 0 auto;
-  height: 220px;
-  width: auto;
-  border-radius: 12px;
-  cursor: pointer;
-  scroll-snap-align: start;
-}
-
-/* edge fades (under arrows) */
-.sheet .gallery-wrap::before,
-.sheet .gallery-wrap::after{
-  content:"";
-  position:absolute; top:0; bottom:0; width:32px;
-  pointer-events:none; z-index: 1;
-  background: linear-gradient(90deg, rgba(15,15,18,1), rgba(15,15,18,0));
-}
-.sheet .gallery-wrap::after{
-  right:0; left:auto;
-  transform: scaleX(-1);
-}
-
-/* arrows are siblings of the viewport, pinned to wrap (modal) edges */
-.sheet .gallery-arrow{
-  position: absolute; top: 50%; transform: translateY(-50%);
-  width: 44px; height: 44px; display: grid; place-items: center;
-  background: #202028; border: 1px solid #2a2a30; color: var(--fg);
-  border-radius: 999px; box-shadow: 0 8px 20px rgba(0,0,0,.4);
-  z-index: 3; pointer-events: auto;
-}
-.sheet .gallery-arrow.left  { left: 12px; }
-.sheet .gallery-arrow.right { right: 12px; }
-
-
-
+    /* === Station modal gallery (anchored to modal width) === */
+    .sheet { position: relative; }
+    .sheet .gallery-wrap{
+      position: relative; width: 100%; max-width: 100%; overflow: hidden;
+    }
+    .sheet .gallery-viewport{
+      position: relative; width: 100%;
+      overflow-x: auto; overflow-y: hidden;
+      padding: 0 72px; /* gutters so arrows don't cover photos */
+      -ms-overflow-style: none; scrollbar-width: none;
+    }
+    .sheet .gallery-viewport::-webkit-scrollbar{ display: none; }
+    .sheet .gallery-row{
+      display: flex; gap: 8px; scroll-behavior: smooth; scroll-snap-type: x mandatory;
+    }
+    .sheet .gallery-row img{
+      flex: 0 0 auto; height: 220px; width: auto; border-radius: 12px; cursor: pointer; scroll-snap-align: start;
+    }
+    .sheet .gallery-wrap::before,
+    .sheet .gallery-wrap::after{
+      content:""; position:absolute; top:0; bottom:0; width:32px; pointer-events:none; z-index: 1;
+      background: linear-gradient(90deg, rgba(15,15,18,1), rgba(15,15,18,0));
+    }
+    .sheet .gallery-wrap::after{ right:0; left:auto; transform: scaleX(-1); }
+    .sheet .gallery-arrow{
+      position: absolute; top: 50%; transform: translateY(-50%);
+      width: 44px; height: 44px; display: grid; place-items: center;
+      background: #202028; border: 1px solid #2a2a30; color: var(--fg);
+      border-radius: 999px; box-shadow: 0 8px 20px rgba(0,0,0,.4);
+      z-index: 3; pointer-events: auto;
+    }
+    .sheet .gallery-arrow.left  { left: 12px; }
+    .sheet .gallery-arrow.right { right: 12px; }
   </style>
 </head>
 <body>
@@ -180,6 +161,23 @@
           <input id="search" type="search" placeholder="Search stations, tags, lines…" aria-label="Search" />
         </div>
         <div class="chips" id="lineChips" aria-label="Line filters"></div>
+
+        <!-- NEW: District + Tags filters -->
+        <div class="filters-row">
+          <div class="filter-group">
+            <div class="filter-label">Districts</div>
+            <select id="districtFilter" multiple aria-label="Filter by districts"></select>
+          </div>
+          <div class="filter-group">
+            <div class="filter-label">Tags</div>
+            <select id="tagFilter" multiple aria-label="Filter by tags"></select>
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="btn ghost" id="applyFilters" type="button">Apply</button>
+            <button class="btn clear" id="clearFilters" type="button">Clear</button>
+          </div>
+          <div class="chips" id="activeChips" aria-live="polite"></div>
+        </div>
       </div>
       <div class="list" id="list" aria-live="polite"></div>
     </aside>
@@ -222,6 +220,13 @@
     const modal = document.getElementById("modal");
     const sheetContent = document.getElementById("sheetContent");
     const searchInput = document.getElementById("search");
+
+    // New filter DOM refs
+    const districtSelect = document.getElementById("districtFilter");
+    const tagSelect = document.getElementById("tagFilter");
+    const activeChipsEl = document.getElementById("activeChips");
+    const applyBtn = document.getElementById("applyFilters");
+    const clearBtn = document.getElementById("clearFilters");
 
     // Lightbox refs
     const lightbox   = document.getElementById('lightbox');
@@ -318,73 +323,116 @@
       searchInput.addEventListener("input", (e) => { searchQuery = e.target.value.trim(); render(); });
     }
 
+    // NEW: populate district + tag selects from data
+    function populateDistrictsAndTags() {
+      // Districts
+      const districts = Array.from(new Set(STATION_DATA.map(s => s.district).filter(Boolean))).sort((a,b)=>a.localeCompare(b));
+      districtSelect.innerHTML = "";
+      districts.forEach(d => {
+        const opt = document.createElement("option");
+        opt.value = d; opt.textContent = d;
+        districtSelect.appendChild(opt);
+      });
+      // Tags
+      const tagSet = new Set();
+      STATION_DATA.forEach(s => (s.tags || []).forEach(t => tagSet.add(t)));
+      tagSelect.innerHTML = "";
+      Array.from(tagSet).sort((a,b)=>a.localeCompare(b)).forEach(t => {
+        const opt = document.createElement("option");
+        opt.value = t; opt.textContent = t;
+        tagSelect.appendChild(opt);
+      });
+    }
+
     // ------------------------------
     // Helpers
     // ------------------------------
 
     // Cache to avoid repeated API calls
-const wikiThumbCache = new Map();
+    const wikiThumbCache = new Map();
 
-/**
- * Try to find a thumbnail for a station via Wikipedia/Commons.
- * Returns Promise<string|null> with a direct HTTPS image URL or null.
- * You can optionally add s.wikiTitle in your stations.json to improve accuracy,
- * e.g. "wikiTitle": "Mundet (Barcelona Metro)"
- */
-function ensureWikiThumb(s) {
-  const key = s.slug || s.name;
-  if (wikiThumbCache.has(key)) return Promise.resolve(wikiThumbCache.get(key));
-
-  // 1) Try Wikipedia pageimages for a station-specific title
-  const title = encodeURIComponent(
-    s.wikiTitle || (s.name + " (Barcelona Metro)")
-  );
-  const wp = "https://en.wikipedia.org/w/api.php"
-    + "?action=query&format=json&origin=*"
-    + "&prop=pageimages"
-    + "&piprop=thumbnail&pithumbsize=800"
-    + "&titles=" + title;
-
-  return fetch(wp)
-    .then(r => r.json())
-    .then(j => {
-      const pages = j && j.query && j.query.pages ? Object.values(j.query.pages) : [];
-      const page = pages[0];
-      const src = page && page.thumbnail && page.thumbnail.source;
-      if (src) {
-        wikiThumbCache.set(key, src);
-        return src;
-      }
-      // 2) Fallback: Commons media search
-      const q = encodeURIComponent((s.name + " Barcelona").trim());
-      const commons = "https://commons.wikimedia.org/w/api.php"
-        + "?action=query&format=json&origin=*"
-        + "&generator=search&gsrsearch=" + q + "&gsrlimit=1"
-        + "&prop=imageinfo&iiprop=url&iiurlwidth=800";
-      return fetch(commons).then(r => r.json()).then(j2 => {
-        const pgs = j2 && j2.query && j2.query.pages ? Object.values(j2.query.pages) : [];
-        const p = pgs[0];
-        const ii = p && p.imageinfo && p.imageinfo[0];
-        const url = ii && (ii.thumburl || ii.url);
-        wikiThumbCache.set(key, url || null);
-        return url || null;
-      });
-    })
-    .catch(() => null);
-}
+    function ensureWikiThumb(s) {
+      const key = s.slug || s.name;
+      if (wikiThumbCache.has(key)) return Promise.resolve(wikiThumbCache.get(key));
+      const title = encodeURIComponent(s.wikiTitle || (s.name + " (Barcelona Metro)"));
+      const wp = "https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&prop=pageimages&piprop=thumbnail&pithumbsize=800&titles=" + title;
+      return fetch(wp)
+        .then(r => r.json())
+        .then(j => {
+          const pages = j && j.query && j.query.pages ? Object.values(j.query.pages) : [];
+          const page = pages[0];
+          const src = page && page.thumbnail && page.thumbnail.source;
+          if (src) { wikiThumbCache.set(key, src); return src; }
+          const q = encodeURIComponent((s.name + " Barcelona").trim());
+          const commons = "https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrsearch=" + q + "&gsrlimit=1&prop=imageinfo&iiprop=url&iiurlwidth=800";
+          return fetch(commons).then(r => r.json()).then(j2 => {
+            const pgs = j2 && j2.query && j2.query.pages ? Object.values(j2.query.pages) : [];
+            const p = pgs[0];
+            const ii = p && p.imageinfo && p.imageinfo[0];
+            const url = ii && (ii.thumburl || ii.url);
+            wikiThumbCache.set(key, url || null);
+            return url || null;
+          });
+        })
+        .catch(() => null);
+    }
 
     function normalizeGallery(g) {
-      // Supports ["a.jpg","b.jpg"] OR [{src:"a.jpg", caption:"..."}]
-      return (g || []).map(item => { if (typeof item === 'string') return { src: item, caption: '', alt: '' }; return { src: item.src, caption: item.caption || '', alt: item.alt || '' }; }).filter(x => x && x.src);
+      return (g || []).map(item => {
+        if (typeof item === 'string') return { src: item, caption: '', alt: '' };
+        return { src: item.src, caption: item.caption || '', alt: item.alt || '' };
+      }).filter(x => x && x.src);
+    }
+
+    // NEW: reads current select states
+    function getActiveFilters() {
+      const districts = Array.from(districtSelect.selectedOptions).map(o => o.value);
+      const tags = Array.from(tagSelect.selectedOptions).map(o => o.value);
+      return { districts, tags, q: searchQuery };
     }
 
     function stationMatchesFilters(s) {
       const lineOk = activeLines.size === 0 || (Array.isArray(s.lines) && s.lines.some((l) => activeLines.has(l)));
-      const statusOk = true; // reserved for future status filter
-      if (!searchQuery) return lineOk && statusOk;
-      if (!fuse) return false; // Fuse not ready
-      const results = new Set(fuse.search(searchQuery).map((r) => r.item.slug));
-      return lineOk && statusOk && results.has(s.slug);
+      // NEW: districts + tags + search
+      const { districts, tags, q } = getActiveFilters();
+
+      if (districts.length && s.district && !districts.includes(s.district)) return false;
+      if (districts.length && !s.district) return false;
+
+      if (tags.length) {
+        const stags = Array.isArray(s.tags) ? s.tags : [];
+        if (!stags.some(t => tags.includes(t))) return false; // OR logic
+      }
+
+      if (q) {
+        if (!fuse) return false;
+        const resultSlugs = new Set(fuse.search(q).map(r => r.item.slug));
+        if (!resultSlugs.has(s.slug)) return false;
+      }
+
+      return lineOk;
+    }
+
+    // Active filter chips
+    function renderActiveChips() {
+      const { districts, tags, q } = getActiveFilters();
+      activeChipsEl.innerHTML = "";
+      const mk = (label, onClick) => {
+        const chip = document.createElement("button");
+        chip.className = "chip";
+        chip.textContent = label + " ✕";
+        chip.onclick = onClick;
+        activeChipsEl.appendChild(chip);
+      };
+      districts.forEach(d => mk("District: " + d, () => {
+        Array.from(districtSelect.options).forEach(o => { if (o.value === d) o.selected = false; });
+        render();
+      }));
+      tags.forEach(t => mk("#" + t, () => {
+        Array.from(tagSelect.options).forEach(o => { if (o.value === t) o.selected = false; });
+        render();
+      }));
+      if (q) mk("“" + q + "”", () => { searchInput.value = ""; searchQuery = ""; render(); });
     }
 
     function markerForStation(s) {
@@ -396,227 +444,186 @@ function ensureWikiThumb(s) {
       return m;
     }
 
-function openStation(s) {
-  const gal = normalizeGallery(s.gallery);
+    function openStation(s) {
+      const gal = normalizeGallery(s.gallery);
 
-  // Build base HTML
-  let html = '';
-  html += '<h2 style="margin:6px 0 4px">' + s.name + '</h2>';
-  html += '<div class="meta">';
-  (s.lines || []).forEach((l) => {
-    html += '<span class="badge" style="border-color:' + (LINE_COLORS[l] || '#2a2a30') + '">' + l + '</span>';
-  });
-  if (s.visited)  html += '<span class="badge visited">Visited' + (s.visitedDate ? ' · ' + s.visitedDate : '') + '</span>';
-  if (s.district) html += '<span class="badge">' + s.district + '</span>';
-  html += '</div>';
+      let html = '';
+      html += '<h2 style="margin:6px 0 4px">' + s.name + '</h2>';
+      html += '<div class="meta">';
+      (s.lines || []).forEach((l) => {
+        html += '<span class="badge" style="border-color:' + (LINE_COLORS[l] || '#2a2a30') + '">' + l + '</span>';
+      });
+      if (s.visited)  html += '<span class="badge visited">Visited' + (s.visitedDate ? ' · ' + s.visitedDate : '') + '</span>';
+      if (s.district) html += '<span class="badge">' + s.district + '</span>';
+      html += '</div>';
 
-  // Always include a mount for the gallery
-  html += '<div id="galleryMount"></div>';
+      html += '<div id="galleryMount"></div>';
 
-  const acts = s.activities || [];
-  if (acts.length) {
-    html += '<div><h3 style="margin:12px 0 6px; font-size:15px;">Activities</h3><ul>';
-    acts.forEach((a) => { html += '<li><b>' + a.title + '</b> — ' + (a.note || '') + '</li>'; });
-    html += '</ul></div>';
-  }
-  if (s.notes) html += '<p style="color:var(--muted)">' + s.notes + '</p>';
-
-  const tags = s.tags || [];
-  if (tags.length) {
-    html += '<div class="meta">';
-    tags.forEach((t) => { html += '<span class="badge">#' + t + '</span>'; });
-    html += '</div>';
-  }
-
-  // Inject + open modal
-  sheetContent.innerHTML = html;
-  modal.classList.add('open');
-  modal.setAttribute('aria-hidden', 'false');
-  document.body.classList.add('modal-open');
-
-  // Build the gallery DOM (viewport = modal width; arrows pinned to wrap)
-  const mount = document.getElementById('galleryMount');
-
-  const wrap = document.createElement('div');
-  wrap.className = 'gallery-wrap';
-
-  const viewportEl = document.createElement('div');
-  viewportEl.className = 'gallery-viewport';
-
-  const rowEl = document.createElement('div');
-  rowEl.className = 'gallery-row';
-  rowEl.id = 'gRow';
-
-  // Add local images if any
-  if (gal.length) {
-    gal.forEach((g, idx) => {
-      const img = document.createElement('img');
-      img.src = g.src;
-      img.alt = g.alt || ('Photo of ' + s.name);
-      img.setAttribute('data-idx', idx);
-      img.addEventListener('click', () => openLightbox(gal, idx, s.name));
-      rowEl.appendChild(img);
-    });
-  } else {
-    // Wikipedia/Commons fallback
-    const credit = document.createElement('div');
-    credit.className = 'caption';
-    credit.style.cssText = 'font-size:12px;opacity:.8;margin-top:6px;';
-    ensureWikiThumb(s).then(url => {
-      if (url) {
-        const img = document.createElement('img');
-        img.src = url;
-        img.alt = 'Preview of ' + s.name;
-        img.addEventListener('click', () =>
-          openLightbox([{ src: url, caption: 'Image via Wikipedia/Commons' }], 0, s.name)
-        );
-        rowEl.appendChild(img);
-        credit.textContent = 'Image via Wikipedia/Commons';
-      } else {
-        rowEl.innerHTML = '<div style="color:#aaa;padding:8px 0;">No photos yet.</div>';
-        credit.textContent = '';
+      const acts = s.activities || [];
+      if (acts.length) {
+        html += '<div><h3 style="margin:12px 0 6px; font-size:15px;">Activities</h3><ul>';
+        acts.forEach((a) => { html += '<li><b>' + a.title + '</b> — ' + (a.note || '') + '</li>'; });
+        html += '</ul></div>';
       }
-    });
-    mount.appendChild(credit);
-  }
+      if (s.notes) html += '<p style="color:var(--muted)">' + s.notes + '</p>';
 
-  viewportEl.appendChild(rowEl);
-  wrap.appendChild(viewportEl);
+      const tags = s.tags || [];
+      if (tags.length) {
+        html += '<div class="meta">';
+        tags.forEach((t) => { html += '<span class="badge">#' + t + '</span>'; });
+        html += '</div>';
+      }
 
-  // Arrows pinned to the modal-width wrap
-  const prevBtn = document.createElement('button');
-  prevBtn.className = 'gallery-arrow left';
-  prevBtn.id = 'gPrev';
-  prevBtn.setAttribute('aria-label', 'Scroll left');
-  prevBtn.textContent = '◀';
+      sheetContent.innerHTML = html;
+      modal.classList.add('open');
+      modal.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('modal-open');
 
-  const nextBtn = document.createElement('button');
-  nextBtn.className = 'gallery-arrow right';
-  nextBtn.id = 'gNext';
-  nextBtn.setAttribute('aria-label', 'Scroll right');
-  nextBtn.textContent = '▶';
+      const mount = document.getElementById('galleryMount');
+      const wrap = document.createElement('div');
+      wrap.className = 'gallery-wrap';
 
-  wrap.appendChild(prevBtn);
-  wrap.appendChild(nextBtn);
+      const viewportEl = document.createElement('div');
+      viewportEl.className = 'gallery-viewport';
 
-  mount.appendChild(wrap);
+      const rowEl = document.createElement('div');
+      rowEl.className = 'gallery-row';
+      rowEl.id = 'gRow';
 
-  // Scroll the VIEWPORT (fixed to modal width)
-  const step = () => {
-    const firstImg = rowEl.querySelector('img');
-    const gapPx = 8;
-    return firstImg ? firstImg.clientWidth + gapPx : Math.max(300, viewportEl.clientWidth * 0.8);
-  };
-  prevBtn.onclick = () => viewportEl.scrollBy({ left: -step(), behavior: 'smooth' });
-  nextBtn.onclick = () => viewportEl.scrollBy({ left:  step(), behavior: 'smooth' });
-}
+      if (gal.length) {
+        gal.forEach((g, idx) => {
+          const img = document.createElement('img');
+          img.src = g.src;
+          img.alt = g.alt || ('Photo of ' + s.name);
+          img.setAttribute('data-idx', idx);
+          img.addEventListener('click', () => openLightbox(gal, idx, s.name));
+          rowEl.appendChild(img);
+        });
+      } else {
+        const credit = document.createElement('div');
+        credit.className = 'caption';
+        credit.style.cssText = 'font-size:12px;opacity:.8;margin-top:6px;';
+        ensureWikiThumb(s).then(url => {
+          if (url) {
+            const img = document.createElement('img');
+            img.src = url;
+            img.alt = 'Preview of ' + s.name;
+            img.addEventListener('click', () =>
+              openLightbox([{ src: url, caption: 'Image via Wikipedia/Commons' }], 0, s.name)
+            );
+            rowEl.appendChild(img);
+            credit.textContent = 'Image via Wikipedia/Commons';
+          } else {
+            rowEl.innerHTML = '<div style="color:#aaa;padding:8px 0;">No photos yet.</div>';
+            credit.textContent = '';
+          }
+        });
+        mount.appendChild(credit);
+      }
 
+      viewportEl.appendChild(rowEl);
+      wrap.appendChild(viewportEl);
 
+      const prevBtn = document.createElement('button');
+      prevBtn.className = 'gallery-arrow left';
+      prevBtn.id = 'gPrev';
+      prevBtn.setAttribute('aria-label', 'Scroll left');
+      prevBtn.textContent = '◀';
 
+      const nextBtn = document.createElement('button');
+      nextBtn.className = 'gallery-arrow right';
+      nextBtn.id = 'gNext';
+      nextBtn.setAttribute('aria-label', 'Scroll right');
+      nextBtn.textContent = '▶';
 
+      wrap.appendChild(prevBtn);
+      wrap.appendChild(nextBtn);
+      mount.appendChild(wrap);
+
+      const step = () => {
+        const firstImg = rowEl.querySelector('img');
+        const gapPx = 8;
+        return firstImg ? firstImg.clientWidth + gapPx : Math.max(300, viewportEl.clientWidth * 0.8);
+      };
+      prevBtn.onclick = () => viewportEl.scrollBy({ left: -step(), behavior: 'smooth' });
+      nextBtn.onclick = () => viewportEl.scrollBy({ left:  step(), behavior: 'smooth' });
+    }
 
     // ------------------------------
     // Render
     // ------------------------------
-// ------------------------------
-// Render
-// ------------------------------
-function render() {
-  const visited = STATION_DATA.filter((s) => s.visited).length;
-  progressEl.textContent = `${visited}/${STATION_DATA.length} stations visited`;
+    function render() {
+      const visited = STATION_DATA.filter((s) => s.visited).length;
+      progressEl.textContent = `${visited}/${STATION_DATA.length} stations visited`;
 
-  // Clear markers
-  markers.forEach((m) => map.removeLayer(m));
-  markers.length = 0;
+      // Clear markers
+      markers.forEach((m) => map.removeLayer(m));
+      markers.length = 0;
 
-  // Filter + sort
-  const filtered = STATION_DATA
-    .filter(stationMatchesFilters)
-    .sort((a, b) => a.name.localeCompare(b.name));
+      // Filter + sort
+      const filtered = STATION_DATA
+        .filter(stationMatchesFilters)
+        .sort((a, b) => a.name.localeCompare(b.name));
 
-  // Rebuild list
-  listEl.innerHTML = "";
-  filtered.forEach((s) => {
-    const marker = markerForStation(s);
-    markers.push(marker);
+      // Rebuild list
+      listEl.innerHTML = "";
+      filtered.forEach((s) => {
+        const marker = markerForStation(s);
+        markers.push(marker);
 
-    const card = document.createElement("div");
-    card.className = "card";
+        const linesHtml = (s.lines || []).map((l) =>
+          `<span class="badge" style="border-color:${LINE_COLORS[l] || '#2a2a30'}">${l}</span>`
+        ).join('');
 
-    const linesHtml = (s.lines || []).map((l) =>
-      `<span class="badge" style="border-color:${LINE_COLORS[l] || '#2a2a30'}">${l}</span>`
-    ).join('');
+        const tagsHtml = (s.tags || []).slice(0, 3).map((t) =>
+          `<span class="badge">#${t}</span>`
+        ).join('');
 
-    const tagsHtml = (s.tags || []).slice(0, 3).map((t) =>
-      `<span class="badge">#${t}</span>`
-    ).join('');
+        const localThumbs = (s.gallery || []).slice(0, 3).map((src) =>
+          `<img src="${typeof src === 'string' ? src : src.src}" alt="Thumbnail of ${s.name}">`
+        ).join('');
 
-    const localThumbs = (s.gallery || []).slice(0, 3).map((src) =>
-      `<img src="${typeof src === 'string' ? src : src.src}" alt="Thumbnail of ${s.name}">`
-    ).join('');
-
-    card.innerHTML = `
-      <div style="display:flex; align-items:center; justify-content:space-between;">
-        <div style="font-weight:600">${s.name}</div>
-        <div class="meta">${linesHtml}</div>
-      </div>
-      <div class="thumbs" id="thumb-${s.slug}">${localThumbs}</div>
-      <div class="meta">
-        ${s.visited ? '<span class="badge visited">Visited</span>' : '<span class="badge">Planned</span>'}
-        ${s.district ? `<span class="badge">${s.district}</span>` : ''}
-        ${tagsHtml}
-      </div>
-    `;
-
-    // Wikipedia/Commons fallback if no local images
-    if (!localThumbs) {
-      const mount = card.querySelector(`#thumb-${s.slug}`);
-      if (mount) {
-        ensureWikiThumb(s).then(url => {
-          if (url) {
-            mount.innerHTML = `<img src="${url}" alt="Preview of ${s.name} (via Wikipedia)">`;
-          } else {
-            mount.innerHTML = '';
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <div style="display:flex; align-items:center; justify-content:space-between;">
+            <div style="font-weight:600">${s.name}</div>
+            <div class="meta">${linesHtml}</div>
+          </div>
+          <div class="thumbs" id="thumb-${s.slug}">${localThumbs}</div>
+          <div class="meta">
+            ${s.visited ? '<span class="badge visited">Visited</span>' : '<span class="badge">Planned</span>'}
+            ${s.district ? `<span class="badge">${s.district}</span>` : ''}
+            ${tagsHtml}
+          </div>
+        `;
+        // Wikipedia/Commons fallback if no local images
+        if (!localThumbs) {
+          const mount = card.querySelector(`#thumb-${s.slug}`);
+          if (mount) {
+            ensureWikiThumb(s).then(url => {
+              if (url) {
+                mount.innerHTML = `<img src="${url}" alt="Preview of ${s.name} (via Wikipedia)">`;
+              } else {
+                mount.innerHTML = '';
+              }
+            });
           }
-        });
+        }
+
+        card.onclick = () => { openStation(s); map.setView(s.coords, 15); };
+        listEl.appendChild(card);
+      });
+
+      // Fit bounds to visible markers
+      if (filtered.length) {
+        const group = L.featureGroup(markers);
+        map.fitBounds(group.getBounds().pad(0.2));
       }
+
+      // Active filter chips
+      renderActiveChips();
     }
-
-    card.onclick = () => { openStation(s); map.setView(s.coords, 15); };
-    listEl.appendChild(card);
-  });
-
-  // Fit bounds to visible markers
-  if (filtered.length) {
-    const group = L.featureGroup(markers);
-    map.fitBounds(group.getBounds().pad(0.2));
-  }
-}
-
-// ------------------------------
-// App bootstrap
-// ------------------------------
-function init() {
-  if (!Array.isArray(STATION_DATA)) {
-    console.error("STATION_DATA is not an array", STATION_DATA);
-    progressEl.textContent = "Error: bad data format";
-    listEl.innerHTML = "<p style='padding:12px;color:#bbb'>Data format error.</p>";
-    return;
-  }
-  buildLineChips();
-  setupSearch();
-  render();
-}
-
-loadStations()
-  .then(init)
-  .catch((err) => {
-    console.error("Data load failed:", err);
-    listEl.innerHTML = "<p style='padding:12px;color:#bbb'>Couldn’t load stations.json</p>";
-    progressEl.textContent = "Error loading data";
-  });
-
-
 
     // ------------------------------
     // App bootstrap
@@ -630,14 +637,30 @@ loadStations()
       }
       buildLineChips();
       setupSearch();
+      populateDistrictsAndTags();
+
+      // Wire filter controls
+      const reRender = () => render();
+      districtSelect.addEventListener("change", reRender);
+      tagSelect.addEventListener("change", reRender);
+      applyBtn.addEventListener("click", reRender);
+      clearBtn.addEventListener("click", () => {
+        Array.from(districtSelect.options).forEach(o => o.selected = false);
+        Array.from(tagSelect.options).forEach(o => o.selected = false);
+        searchInput.value = ""; searchQuery = "";
+        render();
+      });
+
       render();
     }
 
-    loadStations().then(init).catch((err) => {
-      console.error("Data load failed:", err);
-      listEl.innerHTML = "<p style='padding:12px;color:#bbb'>Couldn’t load stations.json</p>";
-      progressEl.textContent = "Error loading data";
-    });
+    loadStations()
+      .then(init)
+      .catch((err) => {
+        console.error("Data load failed:", err);
+        listEl.innerHTML = "<p style='padding:12px;color:#bbb'>Couldn’t load stations.json</p>";
+        progressEl.textContent = "Error loading data";
+      });
   </script>
 </body>
 </html>
