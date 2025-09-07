@@ -12,7 +12,7 @@
   <!-- Fuse.js (search) -->
   <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2"></script>
 
-  <!-- favicon upload -->
+  <!-- favicon -->
   <link rel="icon" type="image/png" href="photos/favicon.png?v=1">
 
   <style>
@@ -21,7 +21,7 @@
       --fg: #f5f5f7;        /* off-white */
       --muted: #9aa0a6;
       --card: #17171b;
-      --accent: #ff4655;    /* you can tweak */
+      --accent: #ff4655;    /* tweak if you want */
       --radius: 16px;
     }
     * { box-sizing: border-box; }
@@ -52,22 +52,15 @@
     .search { display: flex; gap: 8px; align-items: center; background: var(--card); border-radius: var(--radius); padding: 10px 12px; }
     .search input { background: transparent; border: 0; outline: 0; color: var(--fg); width: 100%; }
 
-    /* New filter controls */
-    .filters-row { display: grid; gap: 10px; }
-    .filter-group { display: grid; gap: 6px; }
-    .filter-label { font-size: 12px; color: var(--muted); }
-    select, .btn {
-      background: #202028; color: var(--fg); border: 1px solid #2a2a30;
-      border-radius: 12px; padding: 10px 12px; font-size: 14px;
-    }
-    select[multiple] { min-height: 110px; }
-    .btn { cursor: pointer; }
-    .btn.ghost { background: #202028; }
-    .btn.clear { background: transparent; border-color: #2a2a30; color: var(--muted); }
-
+    .group-label { font-size: 12px; color: var(--muted); }
     .chips { display: flex; flex-wrap: wrap; gap: 8px; }
-    .chip { font-size: 12px; padding: 6px 10px; border-radius: 999px; border: 1px solid #2a2a30; cursor: pointer; user-select: none; }
-    .chip.active { border-color: var(--accent); color: var(--accent); }
+    .chip {
+      font-size: 12px; padding: 6px 10px; border-radius: 999px;
+      border: 1px solid #2a2a30; cursor: pointer; user-select: none;
+      background: #202028; color: var(--fg);
+      transition: border-color .15s, color .15s, background .15s, box-shadow .15s;
+    }
+    .chip.active { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 0 2px rgba(255,70,85,.12) inset; }
 
     .list { overflow: auto; padding: 10px 10px 18px; }
     .card { background: var(--card); border: 1px solid #232327; border-radius: var(--radius); padding: 12px; margin: 10px; display: grid; gap: 8px; cursor: pointer; }
@@ -114,9 +107,7 @@
 
     /* === Station modal gallery (anchored to modal width) === */
     .sheet { position: relative; }
-    .sheet .gallery-wrap{
-      position: relative; width: 100%; max-width: 100%; overflow: hidden;
-    }
+    .sheet .gallery-wrap{ position: relative; width: 100%; max-width: 100%; overflow: hidden; }
     .sheet .gallery-viewport{
       position: relative; width: 100%;
       overflow-x: auto; overflow-y: hidden;
@@ -124,12 +115,8 @@
       -ms-overflow-style: none; scrollbar-width: none;
     }
     .sheet .gallery-viewport::-webkit-scrollbar{ display: none; }
-    .sheet .gallery-row{
-      display: flex; gap: 8px; scroll-behavior: smooth; scroll-snap-type: x mandatory;
-    }
-    .sheet .gallery-row img{
-      flex: 0 0 auto; height: 220px; width: auto; border-radius: 12px; cursor: pointer; scroll-snap-align: start;
-    }
+    .sheet .gallery-row{ display: flex; gap: 8px; scroll-behavior: smooth; scroll-snap-type: x mandatory; }
+    .sheet .gallery-row img{ flex: 0 0 auto; height: 220px; width: auto; border-radius: 12px; cursor: pointer; scroll-snap-align: start; }
     .sheet .gallery-wrap::before,
     .sheet .gallery-wrap::after{
       content:""; position:absolute; top:0; bottom:0; width:32px; pointer-events:none; z-index: 1;
@@ -160,25 +147,28 @@
         <div class="search">
           <input id="search" type="search" placeholder="Search stations, tags, lines…" aria-label="Search" />
         </div>
-        <div class="chips" id="lineChips" aria-label="Line filters"></div>
 
-        <!-- NEW: District + Tags filters -->
-        <div class="filters-row">
-          <div class="filter-group">
-            <div class="filter-label">Districts</div>
-            <select id="districtFilter" multiple aria-label="Filter by districts"></select>
-          </div>
-          <div class="filter-group">
-            <div class="filter-label">Tags</div>
-            <select id="tagFilter" multiple aria-label="Filter by tags"></select>
-          </div>
-          <div style="display:flex; gap:8px; flex-wrap:wrap;">
-            <button class="btn ghost" id="applyFilters" type="button">Apply</button>
-            <button class="btn clear" id="clearFilters" type="button">Clear</button>
-          </div>
-          <div class="chips" id="activeChips" aria-live="polite"></div>
+        <!-- Existing line chips -->
+        <div class="group">
+          <div class="group-label">Lines</div>
+          <div class="chips" id="lineChips" aria-label="Line filters"></div>
+        </div>
+
+        <!-- NEW: District and Tag chips -->
+        <div class="group">
+          <div class="group-label">Districts</div>
+          <div class="chips" id="districtChips" aria-label="District filters"></div>
+        </div>
+        <div class="group">
+          <div class="group-label">Tags</div>
+          <div class="chips" id="tagChips" aria-label="Tag filters"></div>
+        </div>
+
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button id="clearAll" class="chip" type="button" title="Clear filters">Clear</button>
         </div>
       </div>
+
       <div class="list" id="list" aria-live="polite"></div>
     </aside>
   </main>
@@ -215,18 +205,15 @@
     };
 
     const listEl = document.getElementById("list");
-    const chipsEl = document.getElementById("lineChips");
+    const lineChipsEl = document.getElementById("lineChips");
+    const districtChipsEl = document.getElementById("districtChips");
+    const tagChipsEl = document.getElementById("tagChips");
     const progressEl = document.getElementById("progress");
     const modal = document.getElementById("modal");
     const sheetContent = document.getElementById("sheetContent");
     const searchInput = document.getElementById("search");
 
-    // New filter DOM refs
-    const districtSelect = document.getElementById("districtFilter");
-    const tagSelect = document.getElementById("tagFilter");
-    const activeChipsEl = document.getElementById("activeChips");
-    const applyBtn = document.getElementById("applyFilters");
-    const clearBtn = document.getElementById("clearFilters");
+    const clearAllBtn = document.getElementById("clearAll");
 
     // Lightbox refs
     const lightbox   = document.getElementById('lightbox');
@@ -243,7 +230,9 @@
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "&copy; OpenStreetMap" }).addTo(map);
 
     const markers = [];
-    const activeLines = new Set(); // empty = all
+    const activeLines = new Set();     // multi-select chips
+    const activeDistricts = new Set(); // multi-select chips
+    const activeTags = new Set();      // multi-select chips
     let searchQuery = "";
 
     document.getElementById("closeBtn").onclick = () => {
@@ -306,42 +295,64 @@
     // UI builders (run AFTER data loads)
     // ------------------------------
     function buildLineChips() {
-      chipsEl.innerHTML = "";
+      lineChipsEl.innerHTML = "";
       const allLines = [...new Set(STATION_DATA.flatMap((s) => s.lines))].sort();
       allLines.forEach((line) => {
         const chip = document.createElement("button");
         chip.className = "chip";
         chip.textContent = line;
         chip.style.borderColor = LINE_COLORS[line] || "#2a2a30";
-        chip.onclick = () => { if (activeLines.has(line)) activeLines.delete(line); else activeLines.add(line); chip.classList.toggle("active"); render(); };
-        chipsEl.appendChild(chip);
+        chip.onclick = () => {
+          toggleChip(activeLines, chip, line);
+        };
+        lineChipsEl.appendChild(chip);
       });
+    }
+
+    function buildDistrictChips() {
+      districtChipsEl.innerHTML = "";
+      const districts = [...new Set(STATION_DATA.map(s => s.district).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+      districts.forEach((d) => {
+        const chip = document.createElement("button");
+        chip.className = "chip";
+        chip.textContent = d;
+        chip.onclick = () => {
+          toggleChip(activeDistricts, chip, d);
+        };
+        districtChipsEl.appendChild(chip);
+      });
+    }
+
+    function buildTagChips() {
+      tagChipsEl.innerHTML = "";
+      const tagSet = new Set();
+      STATION_DATA.forEach(s => (s.tags || []).forEach(t => tagSet.add(t)));
+      [...tagSet].sort((a,b)=>a.localeCompare(b)).forEach((t) => {
+        const chip = document.createElement("button");
+        chip.className = "chip";
+        chip.textContent = "#" + t;
+        chip.dataset.tag = t;
+        chip.onclick = () => {
+          toggleChip(activeTags, chip, t);
+        };
+        tagChipsEl.appendChild(chip);
+      });
+    }
+
+    function toggleChip(setRef, chipEl, value) {
+      if (setRef.has(value)) {
+        setRef.delete(value);
+        chipEl.classList.remove("active");
+      } else {
+        setRef.add(value);
+        chipEl.classList.add("active");
+      }
+      render();
     }
 
     function setupSearch() {
       fuse = new Fuse(STATION_DATA, { keys: ["name", "tags", "lines"], threshold: 0.3, includeScore: false });
       searchInput.addEventListener("input", (e) => { searchQuery = e.target.value.trim(); render(); });
-    }
-
-    // NEW: populate district + tag selects from data
-    function populateDistrictsAndTags() {
-      // Districts
-      const districts = Array.from(new Set(STATION_DATA.map(s => s.district).filter(Boolean))).sort((a,b)=>a.localeCompare(b));
-      districtSelect.innerHTML = "";
-      districts.forEach(d => {
-        const opt = document.createElement("option");
-        opt.value = d; opt.textContent = d;
-        districtSelect.appendChild(opt);
-      });
-      // Tags
-      const tagSet = new Set();
-      STATION_DATA.forEach(s => (s.tags || []).forEach(t => tagSet.add(t)));
-      tagSelect.innerHTML = "";
-      Array.from(tagSet).sort((a,b)=>a.localeCompare(b)).forEach(t => {
-        const opt = document.createElement("option");
-        opt.value = t; opt.textContent = t;
-        tagSelect.appendChild(opt);
-      });
     }
 
     // ------------------------------
@@ -384,55 +395,30 @@
       }).filter(x => x && x.src);
     }
 
-    // NEW: reads current select states
-    function getActiveFilters() {
-      const districts = Array.from(districtSelect.selectedOptions).map(o => o.value);
-      const tags = Array.from(tagSelect.selectedOptions).map(o => o.value);
-      return { districts, tags, q: searchQuery };
-    }
-
     function stationMatchesFilters(s) {
+      // Lines
       const lineOk = activeLines.size === 0 || (Array.isArray(s.lines) && s.lines.some((l) => activeLines.has(l)));
-      // NEW: districts + tags + search
-      const { districts, tags, q } = getActiveFilters();
+      if (!lineOk) return false;
 
-      if (districts.length && s.district && !districts.includes(s.district)) return false;
-      if (districts.length && !s.district) return false;
-
-      if (tags.length) {
-        const stags = Array.isArray(s.tags) ? s.tags : [];
-        if (!stags.some(t => tags.includes(t))) return false; // OR logic
+      // Districts (chip OR): if any selected, station must be in one of them
+      if (activeDistricts.size > 0) {
+        if (!s.district || !activeDistricts.has(s.district)) return false;
       }
 
-      if (q) {
+      // Tags (chip OR): if any selected, station must have at least one
+      if (activeTags.size > 0) {
+        const stags = Array.isArray(s.tags) ? s.tags : [];
+        if (!stags.some(t => activeTags.has(t))) return false;
+      }
+
+      // Text search (Fuse results by slug)
+      if (searchQuery) {
         if (!fuse) return false;
-        const resultSlugs = new Set(fuse.search(q).map(r => r.item.slug));
+        const resultSlugs = new Set(fuse.search(searchQuery).map(r => r.item.slug));
         if (!resultSlugs.has(s.slug)) return false;
       }
 
-      return lineOk;
-    }
-
-    // Active filter chips
-    function renderActiveChips() {
-      const { districts, tags, q } = getActiveFilters();
-      activeChipsEl.innerHTML = "";
-      const mk = (label, onClick) => {
-        const chip = document.createElement("button");
-        chip.className = "chip";
-        chip.textContent = label + " ✕";
-        chip.onclick = onClick;
-        activeChipsEl.appendChild(chip);
-      };
-      districts.forEach(d => mk("District: " + d, () => {
-        Array.from(districtSelect.options).forEach(o => { if (o.value === d) o.selected = false; });
-        render();
-      }));
-      tags.forEach(t => mk("#" + t, () => {
-        Array.from(tagSelect.options).forEach(o => { if (o.value === t) o.selected = false; });
-        render();
-      }));
-      if (q) mk("“" + q + "”", () => { searchInput.value = ""; searchQuery = ""; render(); });
+      return true;
     }
 
     function markerForStation(s) {
@@ -620,9 +606,6 @@
         const group = L.featureGroup(markers);
         map.fitBounds(group.getBounds().pad(0.2));
       }
-
-      // Active filter chips
-      renderActiveChips();
     }
 
     // ------------------------------
@@ -636,18 +619,19 @@
         return;
       }
       buildLineChips();
+      buildDistrictChips();
+      buildTagChips();
       setupSearch();
-      populateDistrictsAndTags();
 
-      // Wire filter controls
-      const reRender = () => render();
-      districtSelect.addEventListener("change", reRender);
-      tagSelect.addEventListener("change", reRender);
-      applyBtn.addEventListener("click", reRender);
-      clearBtn.addEventListener("click", () => {
-        Array.from(districtSelect.options).forEach(o => o.selected = false);
-        Array.from(tagSelect.options).forEach(o => o.selected = false);
+      // Clear all
+      clearAllBtn.addEventListener("click", () => {
+        activeLines.clear();
+        activeDistricts.clear();
+        activeTags.clear();
         searchInput.value = ""; searchQuery = "";
+
+        // remove 'active' class from all chips
+        document.querySelectorAll(".chips .chip").forEach(ch => ch.classList.remove("active"));
         render();
       });
 
