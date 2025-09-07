@@ -402,11 +402,26 @@
     }
 
     function normalizeGallery(g) {
-      return (g || []).map(item => {
-        if (typeof item === 'string') return { src: item, caption: '', alt: '' };
-        return { src: item.src, caption: item.caption || '', alt: item.alt || '' };
-      }).filter(x => x && x.src);
-    }
+  return (g || [])
+    .map((item) => {
+      if (typeof item === "string") {
+        let src = item.replace(/ /g, "%20");
+        if (src.startsWith("http://")) src = "https://" + src.slice(7);
+        return { src, caption: "", alt: "" };
+      }
+      const raw = item?.src || item?.url || item?.image || item?.href || null;
+      if (!raw) return null;
+      let src = String(raw).replace(/ /g, "%20");
+      if (src.startsWith("http://")) src = "https://" + src.slice(7);
+      return {
+        src,
+        caption: item.caption || item.title || "",
+        alt: item.alt || item.caption || ""
+      };
+    })
+    .filter(Boolean);
+}
+
 
     function stationMatchesFilters(s) {
       // Lines
@@ -485,6 +500,24 @@
   // ----- Peek grid (3 thumbs + "+N" tile) -----
   const mount = document.getElementById('galleryMount');
 
+  const bgSrc = gal[show]?.src || gal[gal.length - 1].src;
+const moreTile = document.createElement('div');
+moreTile.className = 'peek-tile';
+moreTile.setAttribute('data-more', '+' + moreCount + ' photos');
+
+// Preflight the bg image so a 404 doesn't leave a blank tile
+const test = new Image();
+test.onload = () => { moreTile.style.backgroundImage = `url("${bgSrc}")`; };
+test.onerror = () => {
+  moreTile.style.background = '#202028';
+  moreTile.setAttribute('data-more', '+' + moreCount);
+};
+test.src = bgSrc;
+
+moreTile.addEventListener('click', () => openLightbox(gal, show, s.name));
+grid.appendChild(moreTile);
+
+
   // If we have local images
   if (gal.length > 0) {
     const grid = document.createElement('div');
@@ -498,6 +531,22 @@
       img.addEventListener('click', () => openLightbox(gal, i, s.name));
       grid.appendChild(img);
     }
+
+    const img = document.createElement('img');
+img.src = gal[i].src;
+img.alt = gal[i].alt || ('Photo of ' + s.name);
+img.addEventListener('click', () => openLightbox(gal, i, s.name));
+// If the image fails to load, show a neutral tile instead of a broken icon
+img.addEventListener('error', () => {
+  const t = document.createElement('div');
+  t.className = 'peek-tile';
+  t.style.background = '#202028';
+  t.setAttribute('data-more', 'Image missing');
+  t.style.cursor = 'default';
+  img.replaceWith(t);
+});
+grid.appendChild(img);
+
 
     if (gal.length > show) {
       const moreCount = gal.length - show;
